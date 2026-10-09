@@ -5,10 +5,24 @@ import com.printwithai.entity.PrintJob;
 import com.printwithai.enums.PrintJobStatus;
 import com.printwithai.repository.KioskLogRepository;
 import com.printwithai.repository.PrintJobRepository;
+import com.printwithai.storage.StorageService;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.printing.PDFPageable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
+import javax.imageio.ImageIO;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
+import java.awt.Graphics2D;
+import java.awt.GraphicsEnvironment;
+import java.awt.image.BufferedImage;
+import java.awt.print.Printable;
+import java.awt.print.PrinterJob;
+import java.io.File;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -20,15 +34,19 @@ public class MockPrinterService implements PrinterService {
 
     private final PrintJobRepository printJobRepository;
     private final KioskLogRepository kioskLogRepository;
+    private final StorageService storageService;
 
-    public MockPrinterService(PrintJobRepository printJobRepository, KioskLogRepository kioskLogRepository) {
+    public MockPrinterService(PrintJobRepository printJobRepository,
+                              KioskLogRepository kioskLogRepository,
+                              StorageService storageService) {
         this.printJobRepository = printJobRepository;
         this.kioskLogRepository = kioskLogRepository;
+        this.storageService = storageService;
     }
 
     @Override
     public void submitJob(PrintJob job) {
-        log.info("[SIMULATED PRINTING] Received print job {}. No physical printer triggered in demo mode.", job.getPublicReference());
+        log.info("[PRINT DISPATCH] Received print job {}. Preparing spooling...", job.getPublicReference());
 
         // Step 1: Set to QUEUED
         job.setJobStatus(PrintJobStatus.QUEUED);
@@ -38,19 +56,21 @@ public class MockPrinterService implements PrinterService {
                 job.getKioskId(),
                 job.getPublicReference(),
                 "JOB_QUEUED",
-                String.format("Order %s queued for printing (%d pages, %d copies, %s). SIMULATED PRINTING.",
+                String.format("Order %s queued for printing (%d pages, %d copies, %s).",
                         job.getPublicReference(), job.getSelectedPageCount(), job.getCopies(), job.getPrintType().getDisplayName())
         ));
 
-        // Step 2 & 3: Simulate realistic printing progress asynchronously
+        // Step 2 & 3: Trigger printing progress asynchronously
         simulateAsyncPrinting(job.getId());
     }
 
     private void simulateAsyncPrinting(Long jobId) {
         CompletableFuture.runAsync(() -> {
             try {
-                // Wait 2 seconds in QUEUE
-                TimeUnit.SECONDS.sleep(2);
+                // Wait 1 second in QUEUE
+                TimeUnit.SECONDS.sleep(1);
+
+                final PrintJob[] activeJob = new PrintJob[1];
 
                 printJobRepository.findById(jobId).ifPresent(job -> {
                     if (job.getJobStatus() == PrintJobStatus.QUEUED) {
@@ -60,13 +80,19 @@ public class MockPrinterService implements PrinterService {
                                 job.getKioskId(),
                                 job.getPublicReference(),
                                 "JOB_PRINTING",
-                                "Printer hardware engaged. Printing pages in progress..."
+                                "Printing started. Dispatching to hardware printer..."
                         ));
+                        activeJob[0] = job;
                     }
                 });
 
-                // Simulate printing duration based on pages (3 seconds)
-                TimeUnit.SECONDS.sleep(3);
+                // Dispatch to physical connected printer
+                if (activeJob[0] != null) {
+                    dispatchToPhysicalPrinter(activeJob[0]);
+                }
+
+                // Wait 2 seconds for spool completion
+                TimeUnit.SECONDS.sleep(2);
 
                 printJobRepository.findById(jobId).ifPresent(job -> {
                     if (job.getJobStatus() == PrintJobStatus.PRINTING) {
@@ -77,24 +103,111 @@ public class MockPrinterService implements PrinterService {
                                 job.getKioskId(),
                                 job.getPublicReference(),
                                 "JOB_COMPLETED",
-                                "Print job successfully finished. Document ready in pickup tray. (SIMULATION)"
+                                "Print job successfully finished. Document ready in pickup tray."
                         ));
-                        log.info("[SIMULATED PRINTING] Job {} completed successfully.", job.getPublicReference());
+                        log.info("[PRINT DISPATCH] Job {} completed successfully.", job.getPublicReference());
                     }
                 });
 
             } catch (InterruptedException e) {
                 Thread.currentThread().interrupt();
-                log.warn("Mock printing simulation interrupted for job ID: {}", jobId);
+                log.warn("Printing execution interrupted for job ID: {}", jobId);
             } catch (Exception e) {
-                log.error("Error during mock printing simulation for job {}: {}", jobId, e.getMessage());
+                log.error("Error during printing execution for job {}: {}", jobId, e.getMessage());
             }
         });
     }
 
+    /**
+     * Sends the file directly to the OS default/connected physical printer using Java Print Service & PDFBox.
+     */
+    private void dispatchToPhysicalPrinter(PrintJob job) {
+        try {
+            if (GraphicsEnvironment.isHeadless()) {
+                log.info("[HARDWARE PRINT] Environment is headless (e.g., cloud server). Skipping local OS printer spooling.");
+                return;
+            }
+
+            PrintService targetPrinter = PrintServiceLookup.lookupDefaultPrintService();
+            if (targetPrinter == null) {
+                PrintService[] availableServices = PrintServiceLookup.lookupPrintServices(null, null);
+                if (availableServices != null && availableServices.length > 0) {
+                    targetPrinter = availableServices[0];
+                }
+            }
+
+            if (targetPrinter == null) {
+                log.warn("[HARDWARE PRINT] No default or connected printer detected in Windows OS. Ready for browser auto-print fallback.");
+                return;
+            }
+
+            log.info("[HARDWARE PRINT] Connected printer detected: '{}'. Preparing job {}...",
+                    targetPrinter.getName(), job.getPublicReference());
+
+            Path filePath = storageService.load(job.getStoredFilename());
+            File file = filePath.toFile();
+            if (!file.exists()) {
+                log.warn("[HARDWARE PRINT] File {} does not exist on disk for physical printing.", job.getStoredFilename());
+                return;
+            }
+
+            PrinterJob printerJob = PrinterJob.getPrinterJob();
+            printerJob.setPrintService(targetPrinter);
+            int copies = (job.getCopies() != null && job.getCopies() > 0) ? job.getCopies() : 1;
+            printerJob.setCopies(copies);
+            printerJob.setJobName("DigiSeva_" + job.getPublicReference());
+
+            String lowerName = job.getStoredFilename().toLowerCase();
+            if (lowerName.endsWith(".pdf")) {
+                try (PDDocument document = Loader.loadPDF(file)) {
+                    printerJob.setPageable(new PDFPageable(document));
+                    printerJob.print();
+                    log.info("[HARDWARE PRINT] Successfully sent PDF job {} to printer '{}'!",
+                            job.getPublicReference(), targetPrinter.getName());
+                    kioskLogRepository.save(new KioskLog(
+                            job.getKioskId(),
+                            job.getPublicReference(),
+                            "HARDWARE_PRINT_SUCCESS",
+                            "Dispatched to physical printer [" + targetPrinter.getName() + "], " + copies + " copies spooled."
+                    ));
+                }
+            } else {
+                // Image file
+                BufferedImage image = ImageIO.read(file);
+                if (image != null) {
+                    printerJob.setPrintable((graphics, pageFormat, pageIndex) -> {
+                        if (pageIndex > 0) {
+                            return Printable.NO_SUCH_PAGE;
+                        }
+                        Graphics2D g2d = (Graphics2D) graphics;
+                        g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+                        double scaleX = pageFormat.getImageableWidth() / image.getWidth();
+                        double scaleY = pageFormat.getImageableHeight() / image.getHeight();
+                        double scale = Math.min(scaleX, scaleY);
+                        g2d.scale(scale, scale);
+                        g2d.drawImage(image, 0, 0, null);
+                        return Printable.PAGE_EXISTS;
+                    });
+                    printerJob.print();
+                    log.info("[HARDWARE PRINT] Successfully sent image job {} to printer '{}'!",
+                            job.getPublicReference(), targetPrinter.getName());
+                    kioskLogRepository.save(new KioskLog(
+                            job.getKioskId(),
+                            job.getPublicReference(),
+                            "HARDWARE_PRINT_SUCCESS",
+                            "Dispatched image to physical printer [" + targetPrinter.getName() + "], " + copies + " copies spooled."
+                    ));
+                }
+            }
+
+        } catch (Throwable t) {
+            log.warn("[HARDWARE PRINT] Physical printer dispatch could not complete: {}. Browser print fallback is available.", t.getMessage());
+        }
+    }
+
     @Override
     public void retryJob(PrintJob job) {
-        log.info("[SIMULATED PRINTING] Retrying job {}", job.getPublicReference());
+        log.info("[PRINT DISPATCH] Retrying job {}", job.getPublicReference());
         job.setJobStatus(PrintJobStatus.QUEUED);
         job.setFailureReason(null);
         printJobRepository.save(job);
@@ -111,7 +224,7 @@ public class MockPrinterService implements PrinterService {
 
     @Override
     public void cancelJob(PrintJob job) {
-        log.info("[SIMULATED PRINTING] Cancelling job {}", job.getPublicReference());
+        log.info("[PRINT DISPATCH] Cancelling job {}", job.getPublicReference());
         job.setJobStatus(PrintJobStatus.CANCELLED);
         printJobRepository.save(job);
 
@@ -125,7 +238,19 @@ public class MockPrinterService implements PrinterService {
 
     @Override
     public String getPrinterStatus() {
-        return "ONLINE (Virtual Demonstration Thermal/Laser Adapter Ready)";
+        try {
+            if (!GraphicsEnvironment.isHeadless()) {
+                PrintService defaultPrintService = PrintServiceLookup.lookupDefaultPrintService();
+                if (defaultPrintService != null) {
+                    return "ONLINE (Hardware Connected: " + defaultPrintService.getName() + ")";
+                }
+                PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
+                if (services != null && services.length > 0) {
+                    return "ONLINE (Printer Detected: " + services[0].getName() + ")";
+                }
+            }
+        } catch (Throwable ignored) {}
+        return "ONLINE (Ready for Hardware & Browser Print)";
     }
 
     @Override

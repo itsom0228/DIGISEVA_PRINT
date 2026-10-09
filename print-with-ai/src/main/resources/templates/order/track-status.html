@@ -117,7 +117,7 @@
                 <!-- Order Details Card -->
                 <div class="glass-card p-4">
                     <h5 class="fw-bold mb-3">Order Details</h5>
-                    <div class="row g-3 small">
+                    <div class="row g-3 small mb-4">
                         <div class="col-md-6">
                             <div class="p-3 bg-light rounded">
                                 <div class="text-muted">Document Name:</div>
@@ -144,12 +144,25 @@
                         </div>
                         <div class="col-md-4">
                             <div class="p-3 bg-light rounded">
-                                <div class="text-muted">Total Paid (Demo):</div>
+                                <div class="text-muted">Total Paid:</div>
                                 <div class="fw-bold text-success" th:text="'₹' + ${job.totalAmount}">₹10.00</div>
                             </div>
                         </div>
                     </div>
+
+                    <!-- Instant Print and View Actions -->
+                    <div class="d-flex flex-wrap gap-2 justify-content-center pt-2 border-top">
+                        <button type="button" class="btn btn-primary-custom px-4 py-2 fw-bold" onclick="triggerBrowserPrint()">
+                            <i class="bi bi-printer-fill me-2"></i> त्वरित प्रिंट करा / Print Document (Ctrl + P)
+                        </button>
+                        <a th:href="@{/print/document/{token}(token=${job.trackingToken})}" target="_blank" class="btn btn-outline-secondary px-3 py-2">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> डॉक्युमेंट पहा / View PDF
+                        </a>
+                    </div>
                 </div>
+
+                <!-- Hidden Iframe to stream and print the actual PDF document -->
+                <iframe id="docPrintFrame" th:src="@{/print/document/{token}(token=${job.trackingToken})}" style="position:absolute;width:0;height:0;border:0;visibility:hidden;" title="Print Document Frame"></iframe>
 
             </div>
         </div>
@@ -162,6 +175,28 @@
         const trackingToken = /*[[${job.trackingToken}]]*/ '';
         const currentStatus = /*[[${job.jobStatus.name()}]]*/ '';
 
+        function triggerBrowserPrint() {
+            const frame = document.getElementById('docPrintFrame');
+            if (frame && frame.contentWindow) {
+                try {
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                    return;
+                } catch (e) {
+                    console.warn('Iframe print error:', e);
+                }
+            }
+            window.open('/print/document/' + trackingToken, '_blank');
+        }
+
+        // Ctrl + P Keyboard Shortcut
+        window.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+                e.preventDefault();
+                triggerBrowserPrint();
+            }
+        });
+
         if (currentStatus !== 'COMPLETED' && currentStatus !== 'FAILED' && currentStatus !== 'CANCELLED') {
             setInterval(async () => {
                 try {
@@ -169,7 +204,6 @@
                     if (res.ok) {
                         const data = await res.json();
                         if (data.jobStatus !== currentStatus) {
-                            // Status updated, refresh page to show new step
                             location.reload();
                         }
                     }

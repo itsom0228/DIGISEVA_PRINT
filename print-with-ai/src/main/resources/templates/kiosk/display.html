@@ -265,7 +265,12 @@
                             <div class="progress mx-auto mb-3" style="height: 18px; max-width: 550px; background: rgba(255, 255, 255, 0.1);">
                                 <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="kioskProgressBar" role="progressbar" style="width: 75%;"></div>
                             </div>
-                            <div class="small text-white-50">Virtual Demonstration Thermal/Laser Spooler Adapter</div>
+                            <div class="small text-white-50 mb-3">Hardware Spooler Active &bull; Sending to connected printer</div>
+                            <div>
+                                <button type="button" class="btn btn-warning fw-bold px-4 py-2 shadow" onclick="triggerKioskBrowserPrint()">
+                                    <i class="bi bi-printer-fill me-2"></i> त्वरित प्रिंट करा / Print Now (Ctrl + P)
+                                </button>
+                            </div>
                         </div>
 
                         <!-- 6. COMPLETED STATE -->
@@ -275,14 +280,17 @@
                             </div>
                             <h2 class="display-5 fw-bold text-success mb-2">Printing Completed!</h2>
                             <p class="lead text-white mb-3" id="completedDesc">
-                                Your printed document is ready in the kiosk output tray.
+                                Your printed document is ready in the printer tray.
                             </p>
                             <div class="p-3 rounded-3 d-inline-block text-start mb-4" style="background: rgba(255, 255, 255, 0.08); min-width: 300px;">
                                 <div class="small text-white-50">Order Reference: <strong class="text-white" id="compRef">PAI-2026-XXXX</strong></div>
                                 <div class="small text-white-50">Document: <strong class="text-white" id="compDoc">Form.pdf</strong></div>
-                                <div class="small text-white-50">Status: <span class="badge bg-success">SIMULATED SUCCESS</span></div>
+                                <div class="small text-white-50">Status: <span class="badge bg-success">SUCCESS</span></div>
                             </div>
-                            <div>
+                            <div class="d-flex justify-content-center gap-3">
+                                <button type="button" class="btn btn-warning fw-bold px-4" onclick="triggerKioskBrowserPrint()">
+                                    <i class="bi bi-printer-fill me-1"></i> री-प्रिंट करा / Print (Ctrl + P)
+                                </button>
                                 <button class="btn btn-primary-custom px-4" id="btnNextCustomer">
                                     <i class="bi bi-arrow-clockwise me-1"></i> Next Customer / Ready
                                 </button>
@@ -295,17 +303,20 @@
                                 <i class="bi bi-exclamation-triangle-fill display-3"></i>
                             </div>
                             <h3 class="fw-bold text-danger mb-2">Print Job Issue</h3>
-                            <p class="text-white-50 mb-3" id="failReason">A simulated hardware exception occurred.</p>
+                            <p class="text-white-50 mb-3" id="failReason">A printer hardware exception occurred.</p>
                             <button class="btn btn-outline-light btn-sm" id="btnResetFailed">Reset Kiosk</button>
                         </div>
 
                     </div>
 
+                    <!-- Hidden Iframe for printing current document -->
+                    <iframe id="kioskPrintFrame" style="position:absolute;width:0;height:0;border:0;visibility:hidden;" title="Kiosk Print Frame"></iframe>
+
                     <!-- Bottom Details Bar -->
                     <div class="pt-4 border-top border-secondary border-opacity-25 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 small text-white-50">
                         <div>
-                            <i class="bi bi-info-circle-fill text-primary me-1"></i>
-                            <strong>SIMULATED PRINTING:</strong> No physical hardware is triggered in college prototype mode.
+                            <i class="bi bi-printer-fill text-success me-1"></i>
+                            <strong>PRINTER CONNECTED:</strong> Hardware printer active. Press <strong>Ctrl + P</strong> anytime to print current order.
                         </div>
                         <div>
                             Location: <span th:text="${kiosk.location}">Laptop Display Terminal</span>
@@ -397,8 +408,53 @@
             }
         }
 
+        let lastPrintedToken = null;
+        let currentOrderToken = null;
+
+        function triggerKioskBrowserPrint() {
+            const frame = document.getElementById('kioskPrintFrame');
+            if (frame && frame.contentWindow && frame.src && !frame.src.endsWith('/display')) {
+                try {
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                    return;
+                } catch(e) {
+                    console.warn("Iframe print error:", e);
+                }
+            }
+            if (currentOrderToken) {
+                window.open('/print/document/' + currentOrderToken, '_blank');
+            }
+        }
+
+        // Global Ctrl + P Keyboard Shortcut for the Kiosk screen
+        window.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+                e.preventDefault();
+                triggerKioskBrowserPrint();
+            }
+        });
+
         function renderKioskStage(data) {
             stageBadge.textContent = data.stage;
+
+            if (data.trackingToken) {
+                currentOrderToken = data.trackingToken;
+            }
+
+            // Auto-trigger printing when order enters PRINTING or COMPLETED stage
+            if ((data.stage === 'PRINTING' || data.stage === 'COMPLETED') && data.trackingToken && lastPrintedToken !== data.trackingToken) {
+                lastPrintedToken = data.trackingToken;
+                const frame = document.getElementById('kioskPrintFrame');
+                if (frame) {
+                    frame.src = '/print/document/' + data.trackingToken;
+                    frame.onload = function() {
+                        setTimeout(() => {
+                            triggerKioskBrowserPrint();
+                        }, 700);
+                    };
+                }
+            }
 
             hideAllStates();
 

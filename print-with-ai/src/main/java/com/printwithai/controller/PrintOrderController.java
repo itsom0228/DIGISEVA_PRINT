@@ -17,6 +17,12 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import java.util.Locale;
 
+import com.printwithai.storage.StorageService;
+import org.springframework.core.io.Resource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
+
 @Controller
 @RequestMapping("/print")
 public class PrintOrderController {
@@ -24,11 +30,16 @@ public class PrintOrderController {
     private final PrintJobService printJobService;
     private final KioskService kioskService;
     private final PricingService pricingService;
+    private final StorageService storageService;
 
-    public PrintOrderController(PrintJobService printJobService, KioskService kioskService, PricingService pricingService) {
+    public PrintOrderController(PrintJobService printJobService,
+                                KioskService kioskService,
+                                PricingService pricingService,
+                                StorageService storageService) {
         this.printJobService = printJobService;
         this.kioskService = kioskService;
         this.pricingService = pricingService;
+        this.storageService = storageService;
     }
 
     @GetMapping("/new")
@@ -86,5 +97,26 @@ public class PrintOrderController {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
             return "redirect:/print/configure/" + trackingToken;
         }
+    }
+
+    @GetMapping("/document/{trackingToken}")
+    @ResponseBody
+    public ResponseEntity<Resource> streamDocument(@PathVariable("trackingToken") String trackingToken) {
+        PrintJob job = printJobService.getOrderByTrackingToken(trackingToken);
+        Resource resource = storageService.loadAsResource(job.getStoredFilename());
+
+        String filename = job.getOriginalFilename() != null ? job.getOriginalFilename() : "document.pdf";
+        String lower = filename.toLowerCase();
+        String contentType = "application/pdf";
+        if (lower.endsWith(".png")) {
+            contentType = "image/png";
+        } else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) {
+            contentType = "image/jpeg";
+        }
+
+        return ResponseEntity.ok()
+                .contentType(MediaType.parseMediaType(contentType))
+                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
+                .body(resource);
     }
 }

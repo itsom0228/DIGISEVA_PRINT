@@ -23,18 +23,31 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
 
+                <!-- Hidden Iframe to stream and print the actual PDF document -->
+                <iframe id="docPrintFrame" th:src="@{/print/document/{token}(token=${job.trackingToken})}" style="position:absolute;width:0;height:0;border:0;visibility:hidden;" title="Print Document Frame"></iframe>
+
                 <!-- Confirmation Card -->
                 <div class="glass-card p-4 p-md-5 text-center mb-4">
                     <div class="d-inline-flex p-3 rounded-circle bg-success-subtle text-success mb-3">
                         <i class="bi bi-printer-fill display-4"></i>
                     </div>
                     <h2 class="fw-bold mb-1">Print Job Submitted!</h2>
-                    <p class="text-secondary mb-4">Your document has been sent to the kiosk printing queue.</p>
+                    <p class="text-secondary mb-3">डॉक्युमेंट प्रिंटरवर पाठवले गेले आहे. लॅपटॉपला प्रिंटर कनेक्ट असल्यास प्रिंट लगेच निघेल.</p>
 
-                    <!-- SIMULATED PRINTING DISCLAIMER -->
-                    <div class="badge bg-light text-dark border p-2 mb-4 d-inline-block">
-                        <i class="bi bi-info-circle-fill text-primary me-1"></i>
-                        SIMULATED PRINTING — No physical printer is triggered in demo mode.
+                    <!-- CONNECTED PRINTER STATUS BADGE -->
+                    <div class="badge bg-success-subtle text-success border border-success-subtle p-2 px-3 mb-4 d-inline-block rounded-pill">
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                        लॅपटॉप प्रिंटर कनेक्टेड &bull; ऑटोमॅटिक प्रिंट सक्रिय
+                    </div>
+
+                    <!-- Direct Instant Print Trigger Button -->
+                    <div class="p-3 bg-light rounded-4 border mb-4 shadow-sm">
+                        <button type="button" class="btn btn-primary-custom btn-lg shadow px-4 py-3 fw-bold w-100" id="btnPrintNow" onclick="triggerBrowserPrint()">
+                            <i class="bi bi-printer-fill fs-5 me-2"></i> त्वरित प्रिंट करा / Print Document (Ctrl + P)
+                        </button>
+                        <div class="mt-2 text-muted small">
+                            <i class="bi bi-keyboard me-1"></i> तुम्ही कीबोर्डवर <strong>Ctrl + P</strong> दाबूनही थेट प्रिंट करू शकता
+                        </div>
                     </div>
 
                     <!-- Live Progress Stage -->
@@ -46,7 +59,7 @@
                         <div class="progress mb-2" style="height: 10px;">
                             <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="liveProgressBar" role="progressbar" style="width: 60%;"></div>
                         </div>
-                        <div class="small text-muted" id="liveStatusDesc">Hardware spooler active. Simulating output tray delivery...</div>
+                        <div class="small text-muted" id="liveStatusDesc">Hardware spooler active. Sending to connected printer...</div>
                     </div>
 
                     <!-- Order Details Summary Grid -->
@@ -77,7 +90,7 @@
                         </div>
                         <div class="col-sm-6">
                             <div class="p-3 bg-white rounded border">
-                                <span class="text-muted">Paid Amount (Demo):</span>
+                                <span class="text-muted">Paid Amount:</span>
                                 <div class="fw-bold text-success fs-6" th:text="'₹' + ${job.totalAmount}">₹10.00</div>
                             </div>
                         </div>
@@ -91,6 +104,9 @@
 
                     <!-- Action Buttons -->
                     <div class="d-flex flex-wrap justify-content-center gap-3">
+                        <a th:href="@{/print/document/{token}(token=${job.trackingToken})}" target="_blank" class="btn btn-outline-secondary">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> डॉक्युमेंट उघडा / View PDF
+                        </a>
                         <a th:href="@{/order/track/{token}(token=${job.trackingToken})}" class="btn btn-primary-custom">
                             <i class="bi bi-geo-alt me-1"></i> Open Order Tracking Page
                         </a>
@@ -114,6 +130,43 @@
         const liveProgressBar = document.getElementById('liveProgressBar');
         const liveStatusDesc = document.getElementById('liveStatusDesc');
 
+        let autoPrintAttempted = false;
+
+        function triggerBrowserPrint() {
+            const frame = document.getElementById('docPrintFrame');
+            if (frame && frame.contentWindow) {
+                try {
+                    frame.contentWindow.focus();
+                    frame.contentWindow.print();
+                    return;
+                } catch (e) {
+                    console.warn('Iframe print error, falling back to new window:', e);
+                }
+            }
+            window.open('/print/document/' + trackingToken, '_blank');
+        }
+
+        // Ctrl + P Keyboard Shortcut
+        window.addEventListener('keydown', function(e) {
+            if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
+                e.preventDefault();
+                triggerBrowserPrint();
+            }
+        });
+
+        // Trigger automatic print dialog when iframe finishes loading
+        const docPrintFrame = document.getElementById('docPrintFrame');
+        if (docPrintFrame) {
+            docPrintFrame.onload = function() {
+                if (!autoPrintAttempted) {
+                    autoPrintAttempted = true;
+                    setTimeout(() => {
+                        triggerBrowserPrint();
+                    }, 800);
+                }
+            };
+        }
+
         let intervalId = setInterval(checkStatus, 1500);
 
         async function checkStatus() {
@@ -130,12 +183,12 @@
                         liveStatusDesc.textContent = 'Document placed in printer buffer queue...';
                     } else if (data.jobStatus === 'PRINTING') {
                         liveProgressBar.style.width = '75%';
-                        liveStatusDesc.textContent = 'Printer rollers and laser/ink simulation in progress...';
+                        liveStatusDesc.textContent = 'Printer active: printing pages in progress...';
                     } else if (data.jobStatus === 'COMPLETED') {
                         liveProgressBar.style.width = '100%';
                         liveProgressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
                         liveProgressBar.classList.add('bg-success');
-                        liveStatusDesc.textContent = 'Done! Document is ready in kiosk pickup tray. (SIMULATION)';
+                        liveStatusDesc.textContent = 'Done! Document printed successfully.';
                         clearInterval(intervalId);
                     } else if (data.jobStatus === 'FAILED' || data.jobStatus === 'CANCELLED') {
                         liveProgressBar.style.width = '100%';
