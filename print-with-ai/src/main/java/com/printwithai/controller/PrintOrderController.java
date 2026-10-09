@@ -34,14 +34,9 @@ public class PrintOrderController {
     @GetMapping("/new")
     public String newPrintOrder(@RequestParam(value = "kioskId", defaultValue = "TAHSIL001") String kioskId,
                                 Model model) {
-        if (!kioskService.isValidKiosk(kioskId)) {
-            model.addAttribute("errorMessage", "Invalid Kiosk Identifier: '" + kioskId + "'. Please select a valid kiosk.");
-            model.addAttribute("kiosks", kioskService.getAllKiosks());
-            return "kiosk/select-kiosk";
-        }
-
-        Kiosk kiosk = kioskService.getKioskById(kioskId);
-        kioskService.recordCustomerConnection(kioskId);
+        String targetId = (kioskId != null && kioskService.isValidKiosk(kioskId.trim())) ? kioskId.trim() : "TAHSIL001";
+        Kiosk kiosk = kioskService.getKioskById(targetId);
+        kioskService.recordCustomerConnection(targetId);
         model.addAttribute("kiosk", kiosk);
         return "order/upload";
     }

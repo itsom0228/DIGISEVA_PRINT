@@ -1,5 +1,5 @@
 -- ========================================================
--- PRINT WITH AI - Full MySQL 8 Database Script
+-- DIGISEVA PRINT - Full MySQL 8 Database Script
 -- Run this in MySQL Workbench, phpMyAdmin, or mysql CLI
 -- ========================================================
 

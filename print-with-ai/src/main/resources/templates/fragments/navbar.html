@@ -4,8 +4,7 @@
     <div class="container">
         <a class="navbar-brand d-flex align-items-center gap-2" th:href="@{/}">
             <span class="fs-4 text-primary"><i class="bi bi-printer-fill"></i></span>
-            <span class="brand-title fs-4" th:text="#{app.name}">PRINT WITH AI</span>
-            <span class="brand-badge ms-1 d-none d-sm-inline">PROTOTYPE</span>
+            <span class="brand-title fs-4" th:text="#{app.name}">DIGISEVA PRINT</span>
         </a>
         <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -16,19 +15,13 @@
                     <a class="nav-link fw-semibold text-secondary" th:href="@{/}" th:text="#{nav.home}"><i class="bi bi-house-door me-1"></i> Home</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link fw-semibold text-secondary" th:href="@{/print/new(kioskId='TAHSIL001')}" th:text="#{nav.start_print}"><i class="bi bi-cloud-arrow-up me-1"></i> Start Printing</a>
+                    <a class="nav-link fw-semibold text-secondary" th:href="@{/print/new}" th:text="#{nav.start_print}"><i class="bi bi-cloud-arrow-up me-1"></i> Start Printing</a>
                 </li>
                 <li class="nav-item">
                     <a class="nav-link fw-semibold text-secondary" th:href="@{/order/track}" th:text="#{nav.track_order}"><i class="bi bi-geo-alt me-1"></i> Track Order</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link fw-semibold text-secondary" th:href="@{/kiosk}" th:text="#{nav.kiosks}"><i class="bi bi-qr-code-scan me-1"></i> Kiosks & QR</a>
-                </li>
-                <li class="nav-item">
                     <a class="nav-link fw-semibold text-secondary" th:href="@{/applications}"><i class="bi bi-file-earmark-text me-1"></i> <span th:text="#{nav.applications}">Applications</span></a>
-                </li>
-                <li class="nav-item">
-                    <a class="nav-link fw-semibold text-primary" th:href="@{/kiosk/display}"><i class="bi bi-display me-1"></i> Kiosk Display</a>
                 </li>
 
                 <!-- Language Selector (English, मराठी, हिंदी) -->

@@ -1,27 +1,22 @@
-# 🖨️ DIGISEVA_PRINT — AI-Assisted Smart Printing & Document Kiosk
+# 🖨️ DigiSeva Print — Official Government & Institutional Self-Service Printing
 
 > **Repository:** DIGISEVA_PRINT  
-> **Tagline:** SCAN. UPLOAD. PAY. PRINT.  
-> **Secondary Tagline:** Smart Printing & Citizen Service Kiosk (DigiSeva).  
+> **Brand Name:** DigiSeva Print  
+> **Tagline:** Official Digital Document & Printing Seva  
 > **Multilingual Support:** English (EN) | मराठी (MR) | हिंदी (HI)
 
 ---
 
 ## 📖 1. Project Overview
 
-**Print with AI** is a full-stack, QR-based self-service printing kiosk web application engineered for public offices, colleges, universities, hospitals, libraries, railway stations, and citizen service centers (such as Tahsil and Gram Panchayat offices).
+**DigiSeva Print** is a full-stack, enterprise-grade self-service printing and institutional document platform engineered for government offices, revenue tahsil centers, municipal corporations, gram panchayats, civil hospitals, and universities.
 
-### Real-World Problem & Example
-A farmer or citizen visits a Tahsil office (e.g., Haveli Tahsil, Pune) and needs a printed extract or certificate. Traditional print shops often have long queues, require transferring personal files over WhatsApp or email to unknown shopkeepers, or lack transparent pricing.
-
-With **Print with AI**, the citizen simply:
-1. **Scans** the QR code mounted on the kiosk (`TAHSIL001`) with their smartphone camera.
-2. **Uploads** the PDF document or image directly from their phone.
-3. **Receives AI Document Assistance**: The system checks page counts, estimates text density, warns of blank/scanned pages, and recommends cost-saving duplex printing in Marathi, Hindi, or English.
-4. **Selects Printing Preferences**: Black & White (₹2.00) vs. Colour (₹8.00), number of copies, specific page ranges (e.g., `1-3, 5`), and single or double-sided.
-5. **Completes Demo Payment**: Safe simulated UPI QR or cash at counter without real financial cards or PINs.
-6. **Simulated Printing Lifecycle**: Job transitions from `CREATED` &rarr; `AWAITING_PAYMENT` &rarr; `QUEUED` &rarr; `PRINTING` &rarr; `COMPLETED`.
-7. **Tracks Live Status**: Secure public tracking token (`TRK-XXXX-XXXX`) displays live timeline progress.
+### Real-World Production Architecture
+1. **Physical Machine Hardware Binding:** Each machine is deployed in a dedicated office (e.g., Tahsil Office, College, Hospital) with locked location security. Customers cannot change the printing location from the user interface.
+2. **Strict Office Data Isolation:** Each office displays **only its authorized application forms** (e.g., Income Certificates for Tahsil, Bonafide for College). Forms and data from other institutions are strictly isolated and never mixed.
+3. **Admin Central Management:** Only administrators have access to configure machines, register new hardware, assign office categories, and adjust operational parameters.
+4. **Dedicated Kiosk Display Terminal:** Physical laptops and kiosk screens display an ATM-grade full-screen terminal interface (`/kiosk/display`), removed from public customer navigation.
+5. **Streamlined Citizen Portal:** Clean homepage focused exclusively on **Start Printing Now**, **Track Existing Order**, and **Applications of the Selected Office**.
 
 ---
 

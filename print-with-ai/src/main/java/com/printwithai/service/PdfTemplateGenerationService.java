@@ -165,7 +165,7 @@ public class PdfTemplateGenerationService {
         cs.stroke();
 
         // Disclaimer
-        String disclaimer = "Print with AI | Standard format for institutional submission. Verify specific requirements with recipient office.";
+        String disclaimer = "DigiSeva Print | Standard format for institutional submission. Official digital public service.";
         cs.beginText();
         cs.setFont(font, 8f);
         cs.setNonStrokingColor(new Color(148, 163, 184)); // Slate 400

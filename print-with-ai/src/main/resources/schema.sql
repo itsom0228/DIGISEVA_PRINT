@@ -1,5 +1,5 @@
 -- ========================================================
--- PRINT WITH AI - Database Schema Definition (H2 & MySQL Compatible)
+-- DIGISEVA PRINT - Database Schema Definition (H2 & MySQL Compatible)
 -- ========================================================
 
 CREATE TABLE IF NOT EXISTS kiosks (

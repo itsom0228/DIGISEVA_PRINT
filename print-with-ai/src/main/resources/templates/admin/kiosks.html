@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Kiosk Management & QR Deployment — PRINT WITH AI</title>
+    <title>Machine Management & Deployment — DIGISEVA PRINT</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link th:href="@{/css/style.css}" rel="stylesheet">
@@ -12,58 +12,246 @@
 
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container py-4">
+    <div class="container-fluid px-lg-5 py-4">
 
-        <div class="d-flex justify-content-between align-items-center mb-4">
+        <!-- Header Bar -->
+        <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4 gap-3">
             <div>
                 <a th:href="@{/admin/dashboard}" class="btn btn-outline-secondary btn-sm mb-2">
                     <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
                 </a>
-                <h3 class="fw-bold mb-0">Kiosk Hardware & QR Deployment</h3>
+                <h3 class="fw-bold mb-1 text-slate-900">
+                    <i class="bi bi-hdd-network text-primary me-2"></i>Machine Hardware & Office Deployment
+                </h3>
+                <p class="text-secondary small mb-0">Configure physical terminals, assign dedicated office institutions, and monitor status.</p>
             </div>
-            <span class="badge bg-primary-subtle text-primary fs-6 px-3 py-2 rounded-pill">
-                <i class="bi bi-broadcast me-1"></i> ZXing QR Engine Active
-            </span>
+            <div class="d-flex align-items-center gap-2">
+                <button type="button" class="btn btn-primary-custom d-flex align-items-center gap-2" data-bs-toggle="modal" data-bs-target="#newMachineModal">
+                    <i class="bi bi-plus-circle-fill"></i> Setup New Machine
+                </button>
+            </div>
         </div>
 
-        <!-- Deployment Instructions Card -->
+        <!-- Alert Feedback -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span th:text="${successMessage}">Success</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span th:text="${errorMessage}">Error</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <!-- Deployment Info Card -->
         <div class="glass-card p-4 mb-4">
-            <h5 class="fw-bold mb-2"><i class="bi bi-sliders text-primary me-2"></i>Deployment Base URL Configuration</h5>
-            <p class="text-secondary small mb-2">
-                Currently configured base URL: <code class="fw-bold text-dark" th:text="${baseUrl}">http://localhost:8080</code>
-            </p>
-            <div class="p-3 bg-light rounded small text-muted">
-                To present from an actual smartphone in your college room or auditorium, bind this server to your local Wi-Fi IP address:
-                <code>app.base-url=http://192.168.x.x:8080</code> in <code>application.properties</code> or environment variables. All generated QR codes will automatically encode this address.
+            <div class="row align-items-center g-3">
+                <div class="col-lg-8">
+                    <h5 class="fw-bold mb-1"><i class="bi bi-broadcast text-primary me-2"></i>Network Terminal Address Configuration</h5>
+                    <p class="text-secondary small mb-1">
+                        Current Base URL: <code class="fw-bold text-dark fs-6" th:text="${baseUrl}">http://localhost:8085</code>
+                    </p>
+                    <div class="text-muted small">
+                        To bind physical terminals on local network, set <code>app.base-url=http://[IP-ADDRESS]:8085</code>. All machine QR codes automatically route smartphones to that IP.
+                    </div>
+                </div>
+                <div class="col-lg-4 text-lg-end">
+                    <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-2 fs-6 rounded-pill">
+                        <i class="bi bi-shield-check me-1"></i> Hardware Security Active
+                    </span>
+                </div>
             </div>
         </div>
 
-        <!-- Kiosks Grid -->
+        <!-- Machines Grid -->
         <div class="row g-4">
-            <div class="col-md-6 col-lg-3" th:each="k : ${kiosks}">
-                <div class="glass-card p-4 text-center h-100 d-flex flex-column justify-content-between">
+            <div class="col-md-6 col-xl-4" th:each="k : ${kiosks}">
+                <div class="glass-card p-4 h-100 d-flex flex-column justify-content-between position-relative">
                     <div>
-                        <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="badge bg-secondary" th:text="${k.kioskId}">TAHSIL001</span>
-                            <span class="badge bg-success-subtle text-success border border-success-subtle" th:text="${k.status}">ACTIVE</span>
+                        <!-- Header: ID + Status + Office Category -->
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <span class="badge bg-secondary fs-6 px-3 py-1 font-monospace" th:text="${k.kioskId}">TAHSIL001</span>
+                            <span th:if="${k.status.name() == 'ACTIVE'}" class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                                <i class="bi bi-record-fill me-1"></i> ONLINE & ACTIVE
+                            </span>
+                            <span th:if="${k.status.name() != 'ACTIVE'}" class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle px-2 py-1">
+                                <i class="bi bi-exclamation-circle-fill me-1"></i> MAINTENANCE
+                            </span>
                         </div>
-                        <h5 class="fw-bold mb-1 text-slate-900" th:text="${k.name}">Tahsil Kiosk</h5>
-                        <p class="text-muted small mb-3" th:text="${k.location}">Location</p>
+
+                        <!-- Assigned Office Institution Badge -->
+                        <div class="mb-3">
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1">
+                                <i class="bi bi-building me-1"></i> Office: <span th:text="${k.officeCategorySlug != null ? k.officeCategorySlug : 'tahsil-office'}">tahsil-office</span>
+                            </span>
+                        </div>
+
+                        <h5 class="fw-bold text-slate-900 mb-1" th:text="${k.name}">Tahsil Office Terminal</h5>
+                        <p class="text-muted small mb-2"><i class="bi bi-geo-alt-fill text-danger me-1"></i> <span th:text="${k.location}">Location</span></p>
+                        <p class="text-secondary small mb-3"><i class="bi bi-pin-map me-1"></i> <span th:text="${k.city} + ', ' + ${k.state}">Pune, Maharashtra</span></p>
 
                         <!-- Generated QR Image -->
-                        <div class="p-3 bg-white rounded border d-inline-block shadow-sm mb-3">
-                            <img th:src="@{/kiosk/qr/{id}(id=${k.kioskId})}" th:alt="${k.name}" style="width: 150px; height: 150px;">
+                        <div class="text-center my-3">
+                            <div class="p-3 bg-white rounded-3 border d-inline-block shadow-sm">
+                                <img th:src="@{/kiosk/qr/{id}(id=${k.kioskId})}" th:alt="${k.name}" style="width: 150px; height: 150px;">
+                                <div class="small fw-bold text-muted mt-2">Scan to Upload & Print</div>
+                            </div>
                         </div>
                     </div>
 
-                    <div class="d-grid gap-2">
-                        <a th:href="@{/kiosk/{id}/download-qr(id=${k.kioskId})}" class="btn btn-primary-custom btn-sm">
-                            <i class="bi bi-download me-1"></i> Download Printable QR
-                        </a>
-                        <a th:href="@{/print/new(kioskId=${k.kioskId})}" target="_blank" class="btn btn-outline-secondary btn-sm">
-                            <i class="bi bi-box-arrow-up-right me-1"></i> Open Order URL
-                        </a>
+                    <!-- Management Actions -->
+                    <div class="mt-3 pt-3 border-top">
+                        <div class="d-grid gap-2 mb-2">
+                            <a th:href="@{/kiosk/display(kioskId=${k.kioskId})}" target="_blank" class="btn btn-primary-custom btn-sm">
+                                <i class="bi bi-display me-1"></i> Launch Kiosk Display Terminal
+                            </a>
+                        </div>
+                        <div class="d-flex gap-2">
+                            <a th:href="@{/kiosk/{id}/download-qr(id=${k.kioskId})}" class="btn btn-outline-secondary btn-sm flex-fill" title="Download QR">
+                                <i class="bi bi-download me-1"></i> QR
+                            </a>
+                            <button type="button" class="btn btn-outline-primary btn-sm flex-fill" data-bs-toggle="modal" th:data-bs-target="'#editMachineModal-' + ${k.id}">
+                                <i class="bi bi-pencil-square me-1"></i> Edit
+                            </button>
+                            <form th:action="@{/admin/kiosks/{id}/toggle-status(id=${k.id})}" method="post" class="d-inline">
+                                <button type="submit" class="btn btn-outline-warning btn-sm" title="Toggle Status">
+                                    <i class="bi bi-power"></i>
+                                </button>
+                            </form>
+                            <form th:action="@{/admin/kiosks/{id}/delete(id=${k.id})}" method="post" class="d-inline" onsubmit="return confirm('Are you sure you want to decommission this machine?');">
+                                <button type="submit" class="btn btn-outline-danger btn-sm" title="Delete Machine">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        </div>
                     </div>
+                </div>
+
+                <!-- Edit Machine Modal for this item -->
+                <div class="modal fade" th:id="'editMachineModal-' + ${k.id}" tabindex="-1" aria-hidden="true">
+                    <div class="modal-dialog modal-dialog-centered">
+                        <div class="modal-content rounded-4 border-0 shadow">
+                            <form th:action="@{/admin/kiosks/save}" method="post">
+                                <input type="hidden" name="id" th:value="${k.id}">
+                                <div class="modal-header border-bottom">
+                                    <h5 class="modal-title fw-bold">
+                                        <i class="bi bi-pencil-square text-primary me-2"></i>Edit Machine: <span th:text="${k.kioskId}">ID</span>
+                                    </h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body p-4">
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-secondary">Machine ID (Terminal Identifier)</label>
+                                        <input type="text" name="kioskId" class="form-control font-monospace" th:value="${k.kioskId}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-secondary">Terminal Display Name</label>
+                                        <input type="text" name="name" class="form-control" th:value="${k.name}" required>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-secondary">Assigned Office / Institution Category</label>
+                                        <select name="officeCategorySlug" class="form-select" required>
+                                            <option th:each="cat : ${categories}"
+                                                    th:value="${cat.slug}"
+                                                    th:text="${cat.name} + ' (' + ${cat.slug} + ')'"
+                                                    th:selected="${cat.slug == k.officeCategorySlug}">
+                                            </option>
+                                        </select>
+                                        <div class="form-text small">This machine will strictly display only forms belonging to this office.</div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-secondary">Location / Counter / Room</label>
+                                        <input type="text" name="location" class="form-control" th:value="${k.location}" required>
+                                    </div>
+                                    <div class="row g-2 mb-3">
+                                        <div class="col-6">
+                                            <label class="form-label small fw-semibold text-secondary">City</label>
+                                            <input type="text" name="city" class="form-control" th:value="${k.city}">
+                                        </div>
+                                        <div class="col-6">
+                                            <label class="form-label small fw-semibold text-secondary">State</label>
+                                            <input type="text" name="state" class="form-control" th:value="${k.state}">
+                                        </div>
+                                    </div>
+                                    <div class="mb-3">
+                                        <label class="form-label small fw-semibold text-secondary">Operational Status</label>
+                                        <select name="status" class="form-select">
+                                            <option value="ACTIVE" th:selected="${k.status.name() == 'ACTIVE'}">ACTIVE (Online & Ready)</option>
+                                            <option value="MAINTENANCE" th:selected="${k.status.name() == 'MAINTENANCE'}">MAINTENANCE (Offline for Servicing)</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="modal-footer border-top">
+                                    <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary-custom px-4">Update Configuration</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+
+        <!-- Setup New Machine Modal -->
+        <div class="modal fade" id="newMachineModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content rounded-4 border-0 shadow">
+                    <form th:action="@{/admin/kiosks/save}" method="post">
+                        <div class="modal-header border-bottom">
+                            <h5 class="modal-title fw-bold">
+                                <i class="bi bi-plus-circle text-primary me-2"></i>Setup New Machine Terminal
+                            </h5>
+                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                        </div>
+                        <div class="modal-body p-4">
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-secondary">Unique Machine ID *</label>
+                                <input type="text" name="kioskId" class="form-control font-monospace" placeholder="e.g. TAHSIL002 or NAGAR001" required>
+                                <div class="form-text small">Unique hardware identifier across the network.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-secondary">Terminal Display Name *</label>
+                                <input type="text" name="name" class="form-control" placeholder="e.g. Haveli Tahsil Main Public Terminal" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-secondary">Assigned Office / Institution Category *</label>
+                                <select name="officeCategorySlug" class="form-select" required>
+                                    <option th:each="cat : ${categories}"
+                                            th:value="${cat.slug}"
+                                            th:text="${cat.name} + ' (' + ${cat.slug} + ')'">
+                                    </option>
+                                </select>
+                                <div class="form-text small">This machine will strictly display only forms belonging to this office.</div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-secondary">Location / Counter / Room *</label>
+                                <input type="text" name="location" class="form-control" placeholder="e.g. Citizen Center, Ground Floor" required>
+                            </div>
+                            <div class="row g-2 mb-3">
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary">City</label>
+                                    <input type="text" name="city" class="form-control" placeholder="e.g. Pune" value="Pune">
+                                </div>
+                                <div class="col-6">
+                                    <label class="form-label small fw-semibold text-secondary">State</label>
+                                    <input type="text" name="state" class="form-control" placeholder="e.g. Maharashtra" value="Maharashtra">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label small fw-semibold text-secondary">Operational Status</label>
+                                <select name="status" class="form-select">
+                                    <option value="ACTIVE" selected>ACTIVE (Online & Ready)</option>
+                                    <option value="MAINTENANCE">MAINTENANCE (Offline for Servicing)</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="modal-footer border-top">
+                            <button type="button" class="btn btn-light" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary-custom px-4">Register & Deploy Machine</button>
+                        </div>
+                    </form>
                 </div>
             </div>
         </div>

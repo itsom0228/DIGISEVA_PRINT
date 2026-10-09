@@ -3,274 +3,229 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title th:text="#{app.name} + ' — ' + #{app.tagline.primary}">PRINT WITH AI — Self-Service Smart Printing Kiosk</title>
+    <title>DigiSeva Print — Official Government & Institutional Self-Service Printing</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Bootstrap Icons -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <!-- Custom Style -->
     <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .hero-banner {
+            background: linear-gradient(135deg, #f8fafc 0%, #eef2ff 100%);
+            border-bottom: 1px solid rgba(226, 232, 240, 0.8);
+        }
+        .office-tab-btn {
+            white-space: nowrap;
+            transition: all 0.25s ease;
+            font-weight: 600;
+        }
+        .office-tab-btn.active {
+            background-color: #2563eb !important;
+            color: #ffffff !important;
+            box-shadow: 0 4px 12px rgba(37, 99, 235, 0.25);
+        }
+        .template-card {
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            border: 1px solid #e2e8f0;
+        }
+        .template-card:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+            border-color: #93c5fd;
+        }
+    </style>
 </head>
 <body>
 
     <!-- Header Navigation -->
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <!-- Hero Section -->
-    <section class="py-5 py-lg-6">
+    <!-- Hero Section: Start Printing Now & Track Existing Order -->
+    <section class="hero-banner py-5 py-lg-6">
         <div class="container">
             <div class="row align-items-center g-5">
                 <div class="col-lg-7 text-center text-lg-start">
+                    
+                    <!-- Official Badge -->
                     <div class="d-inline-flex align-items-center gap-2 mb-3 px-3 py-1 bg-white rounded-pill shadow-sm border">
-                        <span class="badge bg-primary rounded-pill"><i class="bi bi-stars"></i> AI-POWERED</span>
-                        <span class="small fw-semibold text-secondary" th:text="#{app.tagline.secondary}">Smart Printing, Now at Your Service.</span>
+                        <span class="badge bg-primary rounded-pill"><i class="bi bi-shield-check"></i> OFFICIAL SEVA</span>
+                        <span class="small fw-semibold text-secondary">Government & Institutional Public Printing</span>
                     </div>
-                    <h1 class="display-4 fw-extrabold text-slate-900 tracking-tight mb-3" th:text="#{hero.title}">
-                        Printing Made Simple. Powered by Smart Technology.
+
+                    <h1 class="display-4 fw-extrabold text-slate-900 tracking-tight mb-3">
+                        DigiSeva Print
                     </h1>
-                    <p class="lead text-secondary mb-4" th:text="#{hero.subtitle}">
-                        Upload documents, choose your printing options, and manage your print orders through one simple digital platform.
+                    <p class="lead text-secondary mb-3">
+                        Instant, certified self-service document printing and institutional application submission for public offices and institutions.
                     </p>
-                    <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start mb-4">
-                        <a th:href="@{/print/new(kioskId='TAHSIL001')}" class="btn btn-lg btn-primary-custom d-flex align-items-center gap-2">
-                            <i class="bi bi-printer-fill fs-5"></i>
-                            <span th:text="#{hero.cta.start}">Start Printing Now</span>
-                        </a>
-                        <a th:href="@{/admin/dashboard}" class="btn btn-lg btn-secondary-custom d-flex align-items-center gap-2">
-                            <i class="bi bi-speedometer2 text-primary fs-5"></i>
-                            <span th:text="#{hero.cta.admin}">Admin Dashboard</span>
-                        </a>
-                        <a th:href="@{/order/track}" class="btn btn-lg btn-light border d-flex align-items-center gap-2">
-                            <i class="bi bi-search text-secondary"></i>
-                            <span th:text="#{hero.cta.track}">Track Order</span>
-                        </a>
-                    </div>
-                    <!-- Supported formats badge -->
-                    <div class="d-flex align-items-center justify-content-center justify-content-lg-start gap-3 text-muted small">
-                        <span><i class="bi bi-check-circle-fill text-success me-1"></i> PDF Documents</span>
-                        <span><i class="bi bi-check-circle-fill text-success me-1"></i> Images (JPG, PNG)</span>
-                        <span><i class="bi bi-check-circle-fill text-success me-1"></i> Max 10 MB</span>
-                    </div>
-                </div>
 
-                <!-- Visual Kiosk Showcase Card -->
-                <div class="col-lg-5">
-                    <div class="glass-card p-4 text-center position-relative overflow-hidden">
-                        <div class="position-absolute top-0 end-0 m-3">
-                            <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill">
-                                <i class="bi bi-broadcast me-1"></i> ONLINE & READY
+                    <!-- Assigned Terminal Indicator -->
+                    <div class="p-3 bg-white rounded-4 border shadow-sm mb-4 d-inline-flex flex-wrap align-items-center gap-3">
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-primary-subtle text-primary p-2 rounded-circle fs-6">
+                                <i class="bi bi-geo-alt-fill"></i>
                             </span>
+                            <div class="text-start">
+                                <div class="small text-muted" style="font-size: 0.75rem;">Selected Institution & Terminal:</div>
+                                <div class="fw-bold text-slate-900 small" th:text="${selectedCategory.name} + ' — ' + ${designatedKiosk.name}">
+                                    Tahsil Office — Main Terminal (TAHSIL001)
+                                </div>
+                            </div>
                         </div>
-                        <div class="my-3">
-                            <div class="d-inline-flex p-3 rounded-circle bg-primary-subtle text-primary mb-3">
-                                <i class="bi bi-qr-code-scan display-4"></i>
-                            </div>
-                            <h4 class="fw-bold mb-1">Tahsil Office Demo Kiosk</h4>
-                            <p class="text-muted small mb-3"><i class="bi bi-geo-alt-fill text-danger me-1"></i> Tahsil Office, Haveli Sub-Division, Pune</p>
-                            
-                            <!-- QR Code Preview image -->
-                            <div class="p-3 bg-white rounded-3 shadow-sm d-inline-block border mb-3">
-                                <img th:src="@{/kiosk/qr/TAHSIL001}" alt="Tahsil Kiosk QR Code" class="img-fluid" style="width: 170px; height: 170px;">
-                                <div class="small fw-bold text-muted mt-2">Kiosk ID: TAHSIL001</div>
-                            </div>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1">
+                            <i class="bi bi-record-fill me-1"></i> Ready to Print
+                        </span>
+                    </div>
 
-                            <div class="d-grid gap-2">
-                                <a th:href="@{/print/new(kioskId='TAHSIL001')}" class="btn btn-primary-custom">
-                                    <i class="bi bi-camera me-1"></i> Simulate Mobile Scan & Print
-                                </a>
-                                <a th:href="@{/kiosk/TAHSIL001}" class="btn btn-sm btn-outline-secondary">
-                                    <i class="bi bi-fullscreen me-1"></i> View Full Kiosk Screen & Download QR
-                                </a>
-                            </div>
-                        </div>
+                    <!-- Only Primary Actions as requested in Task 6 -->
+                    <div class="d-flex flex-wrap gap-3 justify-content-center justify-content-lg-start mb-4">
+                        <a th:href="@{/print/new(kioskId=${designatedKiosk.kioskId})}" class="btn btn-lg btn-primary-custom px-4 py-3 d-flex align-items-center gap-2 shadow">
+                            <i class="bi bi-printer-fill fs-4"></i>
+                            <span class="fw-bold" th:text="#{hero.cta.start}">Start Printing Now</span>
+                        </a>
+                        <a th:href="@{/order/track}" class="btn btn-lg btn-outline-secondary bg-white px-4 py-3 d-flex align-items-center gap-2">
+                            <i class="bi bi-search text-primary fs-5"></i>
+                            <span class="fw-bold" th:text="#{hero.cta.track}">Track Existing Order</span>
+                        </a>
+                    </div>
+
+                    <!-- Certified Standards -->
+                    <div class="d-flex align-items-center justify-content-center justify-content-lg-start gap-4 text-muted small">
+                        <span><i class="bi bi-file-earmark-pdf-fill text-danger me-1"></i> Standard PDF/Images</span>
+                        <span><i class="bi bi-lock-fill text-success me-1"></i> Auto Privacy Purge</span>
+                        <span><i class="bi bi-check2-circle text-primary me-1"></i> Instant Output</span>
                     </div>
                 </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- Prominent Application Templates Feature Card Section -->
-    <section class="py-4 py-lg-5">
-        <div class="container">
-            <div class="glass-card p-4 p-lg-5 position-relative overflow-hidden shadow-lg border border-primary-subtle"
-                 style="background: linear-gradient(135deg, rgba(255, 255, 255, 0.98) 0%, rgba(239, 246, 255, 0.95) 100%);">
-                <div class="row align-items-center g-4">
-                    <div class="col-lg-8">
-                        <div class="d-inline-flex align-items-center gap-2 mb-3 px-3 py-1 bg-primary-subtle rounded-pill border border-primary-subtle">
-                            <span class="badge bg-primary rounded-pill"><i class="bi bi-file-earmark-text-fill"></i> NEW FEATURE</span>
-                            <span class="small fw-bold text-primary">Standardized Institutional Formats</span>
+                <!-- Right Column: Institutional Overview Card (No Mobile Simulation) -->
+                <div class="col-lg-5">
+                    <div class="card border-0 shadow-lg rounded-4 p-4 bg-white position-relative">
+                        <div class="d-flex align-items-center justify-content-between mb-3 pb-3 border-bottom">
+                            <div>
+                                <span class="badge bg-primary text-white rounded-pill px-3 py-1 mb-1">
+                                    <i class="bi bi-building me-1"></i> ACTIVE OFFICE
+                                </span>
+                                <h4 class="fw-bold mb-0 text-slate-900" th:text="${selectedCategory.name}">Tahsil Office</h4>
+                            </div>
+                            <span class="badge bg-secondary-subtle text-secondary font-monospace" th:text="${designatedKiosk.kioskId}">TAHSIL001</span>
                         </div>
-                        <h2 class="display-6 fw-extrabold text-slate-900 mb-2">Application Templates</h2>
-                        <p class="lead text-secondary mb-3">
-                            Find application formats for colleges, government offices, hospitals and more.
+
+                        <p class="text-secondary small mb-3" th:text="${selectedCategory.description}">
+                            Official revenue certificates, income declarations, residence applications and citizen welfare petitions.
                         </p>
-                        <p class="text-muted small mb-4">
-                            Easily search standardized application formats (Bonafide, TC, Tahsil income certificates, medical requests), personalize your details in seconds, download ready PDFs or send directly to the kiosk printer!
-                        </p>
-                        <div class="d-flex flex-wrap gap-3">
-                            <a th:href="@{/applications}" class="btn btn-lg btn-primary-custom d-flex align-items-center gap-2 px-4 shadow">
-                                <i class="bi bi-folder2-open fs-5"></i>
-                                <span>Explore Applications</span>
-                            </a>
-                            <a th:href="@{/applications(category='college-university')}" class="btn btn-lg btn-outline-primary d-flex align-items-center gap-2">
-                                <i class="bi bi-mortarboard-fill"></i>
-                                <span>College Templates</span>
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-lg-4 text-center">
-                        <div class="p-3 bg-white rounded-4 shadow-sm border d-inline-block text-start w-100" style="max-width: 360px;">
-                            <div class="small fw-bold text-muted text-uppercase mb-2"><i class="bi bi-building me-1"></i> Popular Office Categories</div>
-                            <ul class="list-unstyled mb-0 d-flex flex-column gap-2 small">
-                                <li class="d-flex align-items-center justify-content-between p-2 rounded bg-light">
-                                    <span><i class="bi bi-mortarboard-fill text-primary me-2"></i> College & University</span>
-                                    <span class="badge bg-primary-subtle text-primary">Bonafide, TC, NOC</span>
-                                </li>
-                                <li class="d-flex align-items-center justify-content-between p-2 rounded bg-light">
-                                    <span><i class="bi bi-building-fill-check text-success me-2"></i> Tahsil & Revenue</span>
-                                    <span class="badge bg-success-subtle text-success">दाखले, अर्ज</span>
-                                </li>
-                                <li class="d-flex align-items-center justify-content-between p-2 rounded bg-light">
-                                    <span><i class="bi bi-hospital-fill text-danger me-2"></i> Hospital & Health</span>
-                                    <span class="badge bg-danger-subtle text-danger">Medical Records</span>
-                                </li>
-                                <li class="d-flex align-items-center justify-content-between p-2 rounded bg-light">
-                                    <span><i class="bi bi-bank text-warning me-2"></i> Bank & Institutions</span>
-                                    <span class="badge bg-warning-subtle text-warning-emphasis">Statement, Letters</span>
-                                </li>
-                            </ul>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
 
-    <!-- How It Works Section -->
-    <section class="py-5 bg-white border-top border-bottom">
-        <div class="container">
-            <div class="text-center mb-5">
-                <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 mb-2">SIMPLE PROCESS</span>
-                <h2 class="fw-bold" th:text="#{how.title}">How It Works in 4 Steps</h2>
-                <p class="text-muted">Designed for first-time smartphone users and farmers visiting public offices.</p>
-            </div>
-            <div class="row g-4 text-center">
-                <div class="col-md-3">
-                    <div class="glass-card-sm p-4 h-100">
-                        <div class="timeline-circle mx-auto mb-3 active">1</div>
-                        <h5 class="fw-bold" th:text="#{how.step1.title}">1. Scan Kiosk QR</h5>
-                        <p class="text-muted small" th:text="#{how.step1.desc}">Scan the QR code at any kiosk location using your smartphone camera.</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="glass-card-sm p-4 h-100">
-                        <div class="timeline-circle mx-auto mb-3">2</div>
-                        <h5 class="fw-bold" th:text="#{how.step2.title}">2. Upload Document</h5>
-                        <p class="text-muted small" th:text="#{how.step2.desc}">Choose your PDF or image from your phone.</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="glass-card-sm p-4 h-100">
-                        <div class="timeline-circle mx-auto mb-3">3</div>
-                        <h5 class="fw-bold" th:text="#{how.step3.title}">3. Configure & Pay</h5>
-                        <p class="text-muted small" th:text="#{how.step3.desc}">Pick Black/White or Colour, copies, review AI suggestions, and complete payment.</p>
-                    </div>
-                </div>
-                <div class="col-md-3">
-                    <div class="glass-card-sm p-4 h-100">
-                        <div class="timeline-circle mx-auto mb-3 completed"><i class="bi bi-check-lg"></i></div>
-                        <h5 class="fw-bold" th:text="#{how.step4.title}">4. Collect Print</h5>
-                        <p class="text-muted small" th:text="#{how.step4.desc}">Collect your printed document immediately from the kiosk output tray.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Key Features Section -->
-    <section class="py-5">
-        <div class="container">
-            <div class="text-center mb-5">
-                <span class="badge bg-indigo text-white rounded-pill px-3 py-1 mb-2">SMART CAPABILITIES</span>
-                <h2 class="fw-bold" th:text="#{features.title}">Designed for Public Self-Service</h2>
-                <p class="text-muted">Built for Government Tahsil Offices, Colleges, Hospitals, and Libraries.</p>
-            </div>
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-3">
-                    <div class="glass-card p-4 h-100">
-                        <div class="p-3 bg-primary-subtle text-primary rounded-3 d-inline-block mb-3">
-                            <i class="bi bi-qr-code fs-3"></i>
-                        </div>
-                        <h5 class="fw-bold" th:text="#{features.qr.title}">Zero Contact QR Access</h5>
-                        <p class="text-muted small" th:text="#{features.qr.desc}">Scan the QR code displayed at the kiosk to launch instant upload from your phone.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="glass-card p-4 h-100">
-                        <div class="p-3 bg-purple-subtle text-purple rounded-3 d-inline-block mb-3" style="background:#ede9fe; color:#6d28d9;">
-                            <i class="bi bi-robot fs-3"></i>
-                        </div>
-                        <h5 class="fw-bold" th:text="#{features.ai.title}">Smart AI Document Assistant</h5>
-                        <p class="text-muted small" th:text="#{features.ai.desc}">Automatic page counting, text density analysis, and blank page detection before you spend money.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="glass-card p-4 h-100">
-                        <div class="p-3 bg-success-subtle text-success rounded-3 d-inline-block mb-3">
-                            <i class="bi bi-wallet2 fs-3"></i>
-                        </div>
-                        <h5 class="fw-bold" th:text="#{features.pay.title}">Safe Demo Payments</h5>
-                        <p class="text-muted small" th:text="#{features.pay.desc}">Instant simulated UPI & counter payments designed for rapid testing without real money.</p>
-                    </div>
-                </div>
-                <div class="col-md-6 col-lg-3">
-                    <div class="glass-card p-4 h-100">
-                        <div class="p-3 bg-warning-subtle text-warning-emphasis rounded-3 d-inline-block mb-3">
-                            <i class="bi bi-shield-lock-fill fs-3 text-warning"></i>
-                        </div>
-                        <h5 class="fw-bold" th:text="#{features.privacy.title}">Automatic Privacy Purge</h5>
-                        <p class="text-muted small" th:text="#{features.privacy.desc}">Uploaded documents are securely stored with random identifiers and purged automatically.</p>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </section>
-
-    <!-- Available Demonstration Kiosks Grid -->
-    <section class="py-5 bg-white border-top">
-        <div class="container">
-            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-center mb-4">
-                <div>
-                    <h3 class="fw-bold mb-1" th:text="#{kiosk.location.title}">Demonstration Kiosk Locations</h3>
-                    <p class="text-muted mb-0">Select any configured kiosk location to simulate printing.</p>
-                </div>
-                <a th:href="@{/kiosk}" class="btn btn-outline-primary btn-sm mt-3 mt-md-0">
-                    <i class="bi bi-grid-fill me-1"></i> View All Kiosks
-                </a>
-            </div>
-
-            <div class="row g-4">
-                <div class="col-md-6 col-lg-3" th:each="k : ${kiosks}">
-                    <div class="glass-card p-4 text-center h-100 d-flex flex-column justify-content-between">
-                        <div>
-                            <span class="badge bg-primary-subtle text-primary mb-2" th:text="${k.kioskId}">TAHSIL001</span>
-                            <h5 class="fw-bold mb-1" th:text="${k.name}">Kiosk Name</h5>
-                            <p class="text-muted small mb-3" th:text="${k.location}">Location</p>
-                            <div class="p-2 bg-light rounded border d-inline-block mb-3">
-                                <img th:src="@{/kiosk/qr/{id}(id=${k.kioskId})}" th:alt="${k.name}" style="width: 120px; height: 120px;">
+                        <!-- Key Features of this Office Service -->
+                        <div class="d-flex flex-column gap-2 mb-4">
+                            <div class="p-2 px-3 bg-light rounded-3 d-flex align-items-center justify-content-between small">
+                                <span><i class="bi bi-file-text-fill text-primary me-2"></i>Official Office Applications</span>
+                                <span class="fw-bold badge bg-primary" th:text="${officeTemplates.size()} + ' Forms Available'">10 Forms</span>
+                            </div>
+                            <div class="p-2 px-3 bg-light rounded-3 d-flex align-items-center justify-content-between small">
+                                <span><i class="bi bi-shield-check text-success me-2"></i>Institution Data Isolation</span>
+                                <span class="text-success fw-bold">Strictly Filtered</span>
+                            </div>
+                            <div class="p-2 px-3 bg-light rounded-3 d-flex align-items-center justify-content-between small">
+                                <span><i class="bi bi-pin-map text-danger me-2"></i>Physical Machine Location</span>
+                                <span class="text-truncate fw-semibold" style="max-width: 180px;" th:text="${designatedKiosk.location}">Ground Floor Counter</span>
                             </div>
                         </div>
+
+                        <!-- Direct Print Action for this Machine -->
                         <div class="d-grid gap-2">
-                            <a th:href="@{/print/new(kioskId=${k.kioskId})}" class="btn btn-sm btn-primary-custom">
-                                <i class="bi bi-cloud-arrow-up me-1"></i> Start Print Here
-                            </a>
-                            <a th:href="@{/kiosk/{id}(id=${k.kioskId})}" class="btn btn-sm btn-light border">
-                                <i class="bi bi-info-circle me-1"></i> Kiosk Details
+                            <a th:href="@{/print/new(kioskId=${designatedKiosk.kioskId})}" class="btn btn-primary-custom py-2 fw-bold">
+                                <i class="bi bi-cloud-arrow-up me-2"></i> Print Document at this Office
                             </a>
                         </div>
                     </div>
                 </div>
             </div>
+        </div>
+    </section>
+
+    <!-- SECTION: Applications of the Particular Selected Office Institution Only (Task 4 & 6) -->
+    <section class="py-5 bg-white" id="office-applications-section">
+        <div class="container">
+
+            <!-- Section Header -->
+            <div class="d-flex flex-column flex-md-row justify-content-between align-items-md-end mb-4 gap-3">
+                <div>
+                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-1 mb-2">OFFICE FORMS LIBRARY</span>
+                    <h2 class="fw-bold text-slate-900 mb-1">
+                        Applications for <span class="text-primary" th:text="${selectedCategory.name}">Tahsil & Revenue Office</span>
+                    </h2>
+                    <p class="text-secondary small mb-0">
+                        Displaying only official application formats and forms designated for this institution. Data is never mixed with other offices.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Institution / Office Switcher Pills -->
+            <div class="mb-4 pb-2 border-bottom">
+                <label class="form-label small fw-bold text-muted text-uppercase mb-2">
+                    <i class="bi bi-building me-1"></i> Choose Office / Institution to View Its Designated Applications:
+                </label>
+                <div class="d-flex flex-wrap gap-2">
+                    <a th:each="cat : ${categories}"
+                       th:href="@{/(office=${cat.slug})}"
+                       th:classappend="${cat.slug == selectedCategory.slug} ? 'active' : 'btn-light border text-secondary'"
+                       class="btn btn-sm office-tab-btn rounded-pill px-3 py-2">
+                        <i class="bi bi-building me-1" th:if="${cat.slug == selectedCategory.slug}"></i>
+                        <span th:text="${cat.name}">Tahsil Office</span>
+                    </a>
+                </div>
+            </div>
+
+            <!-- Applications Grid for the Selected Office ONLY -->
+            <div th:if="${#lists.isEmpty(officeTemplates)}" class="text-center py-5">
+                <div class="p-4 bg-light rounded-4 d-inline-block">
+                    <i class="bi bi-folder-x display-4 text-muted mb-3"></i>
+                    <h5 class="fw-bold text-slate-800">No applications currently listed for this office</h5>
+                    <p class="text-secondary small mb-0">Authorized forms for this department are being synchronized by the administration.</p>
+                </div>
+            </div>
+
+            <div th:if="${!#lists.isEmpty(officeTemplates)}" class="row g-4">
+                <div class="col-md-6 col-lg-4" th:each="tpl : ${officeTemplates}">
+                    <div class="card template-card h-100 rounded-4 p-4 d-flex flex-column justify-content-between bg-white">
+                        <div>
+                            <!-- Header: Language badge & Official format tag -->
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 small" th:text="${tpl.language}">
+                                    MARATHI
+                                </span>
+                                <span class="badge bg-light text-secondary border px-2 py-1 small">
+                                    <i class="bi bi-file-earmark-check me-1"></i> Standard A4
+                                </span>
+                            </div>
+
+                            <h5 class="fw-bold text-slate-900 mb-2" th:text="${tpl.title}">Income Certificate Application</h5>
+                            
+                            <p class="text-secondary small mb-3" style="min-height: 48px;" th:text="${tpl.description}">
+                                Application format for obtaining annual income certificate from Tahsildar office.
+                            </p>
+
+                            <div class="p-2 bg-light rounded-3 mb-3 small text-muted">
+                                <i class="bi bi-info-circle text-primary me-1"></i>
+                                <span>Office: <strong class="text-dark" th:text="${selectedCategory.name}">Tahsil Office</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="d-grid gap-2 pt-2 border-top">
+                            <a th:href="@{'/applications/template/' + ${tpl.slug}(kioskId=${designatedKiosk.kioskId})}"
+                               class="btn btn-primary-custom btn-sm fw-semibold d-flex align-items-center justify-content-center gap-1">
+                                <i class="bi bi-pencil-square me-1"></i> Fill & Print at Terminal
+                            </a>
+                            <a th:href="@{'/applications/template/' + ${tpl.id} + '/download'(kioskId=${designatedKiosk.kioskId})}"
+                               class="btn btn-outline-secondary btn-sm d-flex align-items-center justify-content-center gap-1">
+                                <i class="bi bi-download me-1"></i> Download Blank Form PDF
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         </div>
     </section>
 

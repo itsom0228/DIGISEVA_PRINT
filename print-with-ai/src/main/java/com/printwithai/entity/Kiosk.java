@@ -33,6 +33,9 @@ public class Kiosk {
     @Column(nullable = false, length = 20)
     private KioskStatus status = KioskStatus.ACTIVE;
 
+    @Column(name = "office_category_slug", length = 80)
+    private String officeCategorySlug = "tahsil-office";
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -41,11 +44,16 @@ public class Kiosk {
     public Kiosk() {}
 
     public Kiosk(String kioskId, String name, String location, String city, String state, KioskStatus status) {
+        this(kioskId, name, location, city, state, "tahsil-office", status);
+    }
+
+    public Kiosk(String kioskId, String name, String location, String city, String state, String officeCategorySlug, KioskStatus status) {
         this.kioskId = kioskId;
         this.name = name;
         this.location = location;
         this.city = city;
         this.state = state;
+        this.officeCategorySlug = (officeCategorySlug != null && !officeCategorySlug.trim().isEmpty()) ? officeCategorySlug.trim() : "tahsil-office";
         this.status = status;
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
@@ -88,6 +96,9 @@ public class Kiosk {
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
+
+    public String getOfficeCategorySlug() { return officeCategorySlug; }
+    public void setOfficeCategorySlug(String officeCategorySlug) { this.officeCategorySlug = officeCategorySlug; }
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }

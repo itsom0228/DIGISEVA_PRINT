@@ -16,6 +16,9 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
+import com.printwithai.entity.Kiosk;
+import com.printwithai.repository.OfficeCategoryRepository;
+
 @Controller
 @RequestMapping("/admin")
 public class AdminController {
@@ -24,16 +27,19 @@ public class AdminController {
     private final KioskService kioskService;
     private final QrCodeService qrCodeService;
     private final FileCleanupService fileCleanupService;
+    private final OfficeCategoryRepository officeCategoryRepository;
 
     public AdminController(
             PrintJobService printJobService,
             KioskService kioskService,
             QrCodeService qrCodeService,
-            FileCleanupService fileCleanupService) {
+            FileCleanupService fileCleanupService,
+            OfficeCategoryRepository officeCategoryRepository) {
         this.printJobService = printJobService;
         this.kioskService = kioskService;
         this.qrCodeService = qrCodeService;
         this.fileCleanupService = fileCleanupService;
+        this.officeCategoryRepository = officeCategoryRepository;
     }
 
     @GetMapping("/login")
@@ -115,6 +121,41 @@ public class AdminController {
     public String manageKiosks(Model model) {
         model.addAttribute("kiosks", kioskService.getAllKiosks());
         model.addAttribute("baseUrl", qrCodeService.getBaseUrl());
+        model.addAttribute("categories", officeCategoryRepository.findAllByActiveTrueOrderByDisplayOrderAsc());
+        model.addAttribute("newKiosk", new Kiosk());
         return "admin/kiosks";
+    }
+
+    @PostMapping("/kiosks/save")
+    public String saveKiosk(@ModelAttribute Kiosk kiosk, RedirectAttributes redirectAttributes) {
+        try {
+            kioskService.saveKiosk(kiosk);
+            redirectAttributes.addFlashAttribute("successMessage", "Machine terminal '" + kiosk.getKioskId() + "' saved and configured successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error saving machine: " + e.getMessage());
+        }
+        return "redirect:/admin/kiosks";
+    }
+
+    @PostMapping("/kiosks/{id}/toggle-status")
+    public String toggleKioskStatus(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
+        try {
+            kioskService.toggleKioskStatus(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Machine operational status updated.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error updating status: " + e.getMessage());
+        }
+        return "redirect:/admin/kiosks";
+    }
+
+    @PostMapping("/kiosks/{id}/delete")
+    public String deleteKiosk(@PathVariable("id") Long id, RedirectAttributes redirectAttributes) {
+        try {
+            kioskService.deleteKiosk(id);
+            redirectAttributes.addFlashAttribute("successMessage", "Machine decommissioned successfully.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error deleting machine: " + e.getMessage());
+        }
+        return "redirect:/admin/kiosks";
     }
 }
