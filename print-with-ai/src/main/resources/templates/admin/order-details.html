@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Order ' + ${job.publicReference} + ' — Details'">Order Details — PRINT WITH AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container py-4">
+
+        <!-- Back Button & Title -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div class="d-flex align-items-center gap-3">
+                <a th:href="@{/admin/dashboard}" class="btn btn-outline-secondary btn-sm">
+                    <i class="bi bi-arrow-left me-1"></i> Back to Dashboard
+                </a>
+                <h3 class="fw-bold mb-0">Order: <span th:text="${job.publicReference}">PAI-2026-XXXX</span></h3>
+            </div>
+            <div class="d-flex gap-2">
+                <!-- Administrative Actions -->
+                <form th:action="@{/admin/order/{ref}/retry(ref=${job.publicReference})}" method="post" class="d-inline"
+                      th:if="${job.paymentStatus.name() == 'DEMO_SUCCESS'}">
+                    <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Trigger simulated retry for this job?');">
+                        <i class="bi bi-arrow-repeat me-1"></i> Retry Print Job
+                    </button>
+                </form>
+                <form th:action="@{/admin/order/{ref}/cancel(ref=${job.publicReference})}" method="post" class="d-inline"
+                      th:if="${job.jobStatus.name() != 'COMPLETED' and job.jobStatus.name() != 'CANCELLED'}">
+                    <button type="submit" class="btn btn-danger btn-sm" onclick="return confirm('Cancel this print order?');">
+                        <i class="bi bi-x-circle me-1"></i> Cancel Order
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Alert Messages -->
+        <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>
+            <span th:text="${successMessage}">Success</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>
+            <span th:text="${errorMessage}">Error</span>
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Order Specifications & Storage -->
+            <div class="col-lg-7">
+                <div class="glass-card p-4 mb-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Order Specifications</h5>
+                    <table class="table table-borderless small mb-0">
+                        <tr>
+                            <td class="text-muted w-50">Public Reference:</td>
+                            <td class="fw-bold" th:text="${job.publicReference}">PAI-2026-XXXX</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Tracking Token:</td>
+                            <td><code th:text="${job.trackingToken}">TRK-XXXX-XXXX</code></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Kiosk ID & Name:</td>
+                            <td th:text="${job.kioskName} + ' (' + ${job.kioskId} + ')'">Tahsil Office Demo Kiosk</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Original Filename:</td>
+                            <td class="fw-bold text-dark" th:text="${job.originalFilename}">Doc.pdf</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Internal Stored Filename:</td>
+                            <td><code class="text-secondary" th:text="${job.storedFilename}">uuid.pdf</code></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">MIME Type / Size:</td>
+                            <td th:text="${job.fileType} + ' (' + ${job.fileSizeBytes / 1024} + ' KB)'">application/pdf (120 KB)</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Page Configuration:</td>
+                            <td th:text="${job.selectedPageCount} + ' of ' + ${job.totalPages} + ' pages selected (Mode: ' + ${job.selectedPages} + ')'">5 pages</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Print Mode:</td>
+                            <td th:text="${job.printType.displayName} + ' (' + ${job.copies} + ' copies, Duplex: ' + ${job.duplex} + ')'">B&W</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Unit Rate:</td>
+                            <td th:text="'₹' + ${job.unitPrice}">₹2.00</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Duplex Discount:</td>
+                            <td th:text="'₹' + ${job.duplexDiscount}">₹0.00</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Total Calculated Amount:</td>
+                            <td class="fs-5 fw-bold text-success" th:text="'₹' + ${job.totalAmount}">₹10.00</td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Payment Status:</td>
+                            <td><span class="badge bg-success-subtle text-success border border-success-subtle" th:text="${job.paymentStatus}">DEMO_SUCCESS</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">Job Status:</td>
+                            <td><span class="badge badge-status" th:classappend="'badge-status-' + ${job.jobStatus.name()}" th:text="${job.jobStatus.name()}">COMPLETED</span></td>
+                        </tr>
+                        <tr>
+                            <td class="text-muted">File Retention Status:</td>
+                            <td>
+                                <span th:if="${job.fileDeleted}" class="badge bg-danger-subtle text-danger">Purged on Disk</span>
+                                <span th:unless="${job.fileDeleted}" class="badge bg-success-subtle text-success">Retained Active</span>
+                            </td>
+                        </tr>
+                    </table>
+                </div>
+
+                <!-- AI Document Intelligence Inspection -->
+                <div class="glass-card p-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">
+                        <i class="bi bi-cpu text-indigo me-2"></i>AI Document Assistant Record
+                    </h5>
+                    <div class="p-3 bg-light rounded mb-3 small">
+                        <div class="fw-bold text-dark mb-1">Generated Summary:</div>
+                        <div class="text-muted" th:text="${job.aiSummary}">AI summary text</div>
+                    </div>
+                    <div class="p-3 bg-warning-subtle text-warning-emphasis rounded small" th:if="${job.aiBlankPagesNote}">
+                        <div class="fw-bold mb-1"><i class="bi bi-exclamation-triangle-fill me-1"></i> Blank / Low Density Flag:</div>
+                        <div th:text="${job.aiBlankPagesNote}">Low text detected on pages</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Payment Transactions History -->
+            <div class="col-lg-5">
+                <div class="glass-card p-4">
+                    <h5 class="fw-bold mb-3 border-bottom pb-2">Demo Payment Transactions</h5>
+                    <div th:if="${#lists.isEmpty(job.transactions)}" class="text-muted small py-3 text-center">
+                        No transactions registered yet.
+                    </div>
+                    <div th:each="txn : ${job.transactions}" class="p-3 bg-white rounded border shadow-sm mb-3">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <span class="fw-bold text-primary" th:text="${txn.transactionReference}">TXN-DEMO-XXXX</span>
+                            <span class="badge bg-success-subtle text-success" th:text="${txn.status}">SUCCESS</span>
+                        </div>
+                        <div class="fs-5 fw-bold text-slate-900 mb-1" th:text="'₹' + ${txn.amount}">₹10.00</div>
+                        <div class="small text-muted mb-1" th:text="'Mode: ' + ${txn.paymentMode.description}">Mode: Demo UPI</div>
+                        <div class="small text-secondary" th:text="${txn.notes}">Notes</div>
+                        <div class="small text-muted mt-2 text-end" th:text="${#temporals.format(txn.createdAt, 'dd MMM yyyy, HH:mm:ss')}">Timestamp</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

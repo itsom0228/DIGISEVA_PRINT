@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${isEdit ? 'Edit Template' : 'Add New Template'} + ' — Admin Portal'">Template Form</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom Style -->
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+    <!-- Header Navigation -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container py-4">
+        <!-- Breadcrumb -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a th:href="@{/admin/dashboard}" class="text-decoration-none">Dashboard</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/admin/templates}" class="text-decoration-none">Application Templates</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${isEdit ? 'Edit Template' : 'New Template'}">Template</li>
+            </ol>
+        </nav>
+
+        <div class="card border-0 shadow-sm rounded-4">
+            <div class="card-header bg-white border-bottom py-3">
+                <div class="d-flex align-items-center justify-content-between">
+                    <h4 class="fw-bold mb-0 text-slate-900">
+                        <i class="bi" th:classappend="${isEdit ? 'bi-pencil-square text-primary' : 'bi-plus-circle text-success'}"></i>
+                        <span th:text="${isEdit ? 'Edit Application Template' : 'Create New Application Template'}">Template</span>
+                    </h4>
+                    <a th:href="@{/admin/templates}" class="btn btn-sm btn-outline-secondary">
+                        <i class="bi bi-arrow-left me-1"></i> Back to Templates
+                    </a>
+                </div>
+            </div>
+            <div class="card-body p-4">
+                <!-- Alerts -->
+                <div th:if="${errorMessage}" class="alert alert-danger" role="alert" th:text="${errorMessage}">Error</div>
+
+                <form th:action="${isEdit ? '/admin/templates/edit/' + form.id : '/admin/templates/new'}"
+                      method="post" th:object="${form}">
+
+                    <div class="row g-3">
+                        <div class="col-md-7">
+                            <label class="form-label fw-semibold">Template Title *</label>
+                            <input type="text" class="form-control" th:field="*{title}" placeholder="e.g. Bonafide Certificate Application" required>
+                            <div class="text-danger small" th:if="${#fields.hasErrors('title')}" th:errors="*{title}"></div>
+                        </div>
+                        <div class="col-md-5">
+                            <label class="form-label fw-semibold">URL Slug *</label>
+                            <input type="text" class="form-control" th:field="*{slug}" placeholder="e.g. bonafide-certificate-application" required>
+                            <div class="text-danger small" th:if="${#fields.hasErrors('slug')}" th:errors="*{slug}"></div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Office Category *</label>
+                            <select class="form-select" th:field="*{categoryId}" required>
+                                <option value="">-- Select Office Category --</option>
+                                <option th:each="cat : ${categories}" th:value="${cat.id}" th:text="${cat.name}"></option>
+                            </select>
+                            <div class="text-danger small" th:if="${#fields.hasErrors('categoryId')}" th:errors="*{categoryId}"></div>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Document Language *</label>
+                            <select class="form-select" th:field="*{language}" required>
+                                <option value="en">English</option>
+                                <option value="mr">मराठी (Marathi)</option>
+                                <option value="hi">हिंदी (Hindi)</option>
+                            </select>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Purpose / Intended Use</label>
+                            <input type="text" class="form-control" th:field="*{purpose}" placeholder="e.g. Request issuance of bonafide certificate for scholarship or bus pass">
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Short Description</label>
+                            <textarea class="form-control" rows="2" th:field="*{description}" placeholder="Brief overview of who should use this application and when"></textarea>
+                        </div>
+
+                        <div class="col-12">
+                            <label class="form-label fw-semibold">Template Content / Letter Format (with Placeholders) *</label>
+                            <textarea class="form-control font-monospace" rows="14" th:field="*{templateContent}"
+                                      placeholder="To,&#10;The Principal,&#10;[College Name]&#10;&#10;Subject: Application for...&#10;&#10;Respected Sir,&#10;I am [Applicant Name]..." required></textarea>
+                            <div class="form-text small">
+                                Supported standard placeholders: <code>[Applicant Name]</code>, <code>[Contact Number]</code>, <code>[Address]</code>, <code>[The Principal]</code>, <code>[College Name]</code>, <code>[Office Name]</code>, <code>[Roll Number]</code>, <code>[Purpose]</code>, <code>[Date]</code>
+                            </div>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Required Documents (Optional)</label>
+                            <textarea class="form-control" rows="3" th:field="*{requiredDocuments}" placeholder="e.g. ID Card Copy, Marksheet, Fee Receipt"></textarea>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Submission Instructions (Optional)</label>
+                            <textarea class="form-control" rows="3" th:field="*{instructions}" placeholder="e.g. Submit to Student Section Counter 2 with signature"></textarea>
+                        </div>
+
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Source Institution Name (Optional)</label>
+                            <input type="text" class="form-control" th:field="*{sourceName}" placeholder="e.g. Savitribai Phule Pune University">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-semibold">Official Source Link (Optional)</label>
+                            <input type="url" class="form-control" th:field="*{sourceUrl}" placeholder="e.g. https://example.edu.in/forms">
+                        </div>
+
+                        <div class="col-12 pt-2">
+                            <div class="p-3 bg-light rounded-3 d-flex flex-wrap gap-4">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="verifiedSwitch" th:field="*{verified}">
+                                    <label class="form-check-label fw-semibold small" for="verifiedSwitch">Standard Format Verified</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="officialSwitch" th:field="*{officialTemplate}">
+                                    <label class="form-check-label fw-semibold small" for="officialSwitch">Prescribed Official Form</label>
+                                </div>
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="activeSwitch" th:field="*{active}">
+                                    <label class="form-check-label fw-semibold small" for="activeSwitch">Active (Visible to Public)</label>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-12 text-end pt-3">
+                            <a th:href="@{/admin/templates}" class="btn btn-outline-secondary me-2">Cancel</a>
+                            <button type="submit" class="btn btn-primary-custom px-4">
+                                <i class="bi bi-check-lg me-1"></i> Save Template
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

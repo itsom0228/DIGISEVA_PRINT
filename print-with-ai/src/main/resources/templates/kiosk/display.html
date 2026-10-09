@@ -1,0 +1,485 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="'Kiosk Display Terminal — ' + ${kiosk.kioskId}">Kiosk Display — PRINT WITH AI</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom Style -->
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        body.kiosk-fullscreen-body {
+            background: linear-gradient(135deg, #0f172a 0%, #1e1b4b 50%, #0f172a 100%);
+            color: #f8fafc;
+            min-height: 100vh;
+            overflow-x: hidden;
+            user-select: none;
+        }
+
+        .kiosk-header {
+            background: rgba(15, 23, 42, 0.85);
+            backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .kiosk-card {
+            background: rgba(30, 41, 59, 0.85);
+            backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.12);
+            border-radius: 1.25rem;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+
+        .qr-wrapper {
+            background: #ffffff;
+            border-radius: 1.25rem;
+            padding: 1.25rem;
+            display: inline-block;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
+            transition: transform 0.3s ease;
+        }
+
+        .qr-wrapper:hover {
+            transform: scale(1.02);
+        }
+
+        .status-pulse-dot {
+            width: 12px;
+            height: 12px;
+            background-color: #10b981;
+            border-radius: 50%;
+            display: inline-block;
+            box-shadow: 0 0 0 rgba(16, 185, 129, 0.4);
+            animation: pulse-green 2s infinite;
+        }
+
+        @keyframes pulse-green {
+            0% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.7); }
+            70% { box-shadow: 0 0 0 12px rgba(16, 185, 129, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(16, 185, 129, 0); }
+        }
+
+        .radar-pulse {
+            width: 120px;
+            height: 120px;
+            border-radius: 50%;
+            background: rgba(59, 130, 246, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            position: relative;
+        }
+
+        .radar-pulse::before {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 2px solid rgba(59, 130, 246, 0.4);
+            animation: radar-wave 2.5s infinite linear;
+        }
+
+        @keyframes radar-wave {
+            0% { transform: scale(0.8); opacity: 1; }
+            100% { transform: scale(1.5); opacity: 0; }
+        }
+
+        .printing-roller-anim {
+            animation: printing-shake 0.8s infinite alternate;
+        }
+
+        @keyframes printing-shake {
+            0% { transform: translateY(0); }
+            100% { transform: translateY(-4px); }
+        }
+    </style>
+</head>
+<body class="kiosk-fullscreen-body d-flex flex-column">
+
+    <!-- Top Kiosk Bar -->
+    <header class="kiosk-header py-3 px-4">
+        <div class="container-fluid d-flex justify-content-between align-items-center">
+            <!-- Branding -->
+            <div class="d-flex align-items-center gap-3">
+                <div class="p-2 bg-primary rounded-3 text-white fs-4">
+                    <i class="bi bi-printer-fill"></i>
+                </div>
+                <div>
+                    <h4 class="fw-extrabold mb-0 tracking-tight text-white">PRINT WITH AI</h4>
+                    <div class="small text-white-50">Smart Self-Service Printing Kiosk</div>
+                </div>
+            </div>
+
+            <!-- Kiosk Terminal & Availability -->
+            <div class="d-flex align-items-center gap-3">
+                <div class="px-3 py-1 bg-dark bg-opacity-50 rounded-pill border border-secondary d-flex align-items-center gap-2">
+                    <span class="status-pulse-dot"></span>
+                    <span class="fw-semibold small text-success">KIOSK ONLINE</span>
+                </div>
+                <div class="badge bg-primary bg-opacity-25 border border-primary text-primary-emphasis px-3 py-2 rounded-pill fs-6" id="kioskBadge" th:text="${kiosk.kioskId}">
+                    LAPTOP001
+                </div>
+                <!-- Live Digital Clock -->
+                <div class="text-white-50 small font-monospace d-none d-md-block" id="liveClock">
+                    --:--:--
+                </div>
+                <!-- Fullscreen Toggle Button -->
+                <button type="button" class="btn btn-sm btn-outline-light rounded-pill" id="btnFullscreen" title="Toggle Fullscreen">
+                    <i class="bi bi-arrows-fullscreen"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Kiosk Body -->
+    <main class="container-fluid px-lg-5 py-4 flex-grow-1 d-flex align-items-center">
+        <div class="row g-4 w-100 align-items-stretch">
+
+            <!-- LEFT PANEL: QR Code & Mobile Instructions -->
+            <div class="col-lg-5 col-xl-4 d-flex">
+                <div class="kiosk-card p-4 p-xl-5 w-100 text-center d-flex flex-column justify-content-between">
+                    <div>
+                        <div class="badge bg-primary rounded-pill px-3 py-2 mb-3">
+                            <i class="bi bi-phone me-1"></i> SELF-SERVICE ACCESS
+                        </div>
+                        <h3 class="fw-bold text-white mb-2">Scan & Print from Phone</h3>
+                        <p class="text-white-50 small mb-4">
+                            Point your smartphone camera at the QR code below to upload documents and print.
+                        </p>
+
+                        <!-- Real Scannable QR Code -->
+                        <div class="qr-wrapper mb-3">
+                            <img th:src="'data:image/png;base64,' + ${qrBase64}"
+                                 alt="Kiosk Access QR Code"
+                                 id="kioskQrImage"
+                                 class="img-fluid"
+                                 style="width: 250px; height: 250px;">
+                        </div>
+
+                        <div class="small text-white-50 mb-2">
+                            Kiosk URL: <code class="text-info" id="kioskUrlDisplay" th:text="${kioskUrl}">http://localhost:8085/print/new?kioskId=LAPTOP001</code>
+                        </div>
+                    </div>
+
+                    <!-- 4-Step Instructions -->
+                    <div class="text-start mt-4 p-3 rounded-3" style="background: rgba(15, 23, 42, 0.6); border: 1px solid rgba(255, 255, 255, 0.08);">
+                        <div class="row g-2 text-white-50 small">
+                            <div class="col-6"><i class="bi bi-1-circle-fill text-primary me-1"></i> Scan with Camera</div>
+                            <div class="col-6"><i class="bi bi-2-circle-fill text-primary me-1"></i> Upload PDF/Photo</div>
+                            <div class="col-6"><i class="bi bi-3-circle-fill text-primary me-1"></i> Demo Payment</div>
+                            <div class="col-6"><i class="bi bi-4-circle-fill text-success me-1"></i> Collect Print Here</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT PANEL: Dynamic Kiosk Live Status Monitor -->
+            <div class="col-lg-7 col-xl-8 d-flex">
+                <div class="kiosk-card p-4 p-xl-5 w-100 d-flex flex-column justify-content-between position-relative overflow-hidden" id="statusCard">
+
+                    <!-- Top Status Indicator -->
+                    <div class="d-flex justify-content-between align-items-center mb-4">
+                        <div class="d-flex align-items-center gap-2">
+                            <i class="bi bi-display fs-4 text-primary"></i>
+                            <span class="fw-bold fs-5 text-white">Kiosk Display Monitor</span>
+                        </div>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="badge bg-secondary px-3 py-2 rounded-pill" id="stageBadge">WAITING_FOR_CUSTOMER</span>
+                            <button class="btn btn-sm btn-outline-secondary" id="btnResetKiosk" title="Reset to Standby">
+                                <i class="bi bi-arrow-counterclockwise"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Dynamic Stage Content Area -->
+                    <div class="my-auto text-center py-4" id="stageContent">
+
+                        <!-- 1. WAITING FOR CUSTOMER STATE (Default) -->
+                        <div id="stateWaiting">
+                            <div class="radar-pulse mb-4">
+                                <i class="bi bi-qr-code-scan display-4 text-primary"></i>
+                            </div>
+                            <h2 class="display-6 fw-bold text-white mb-2">Waiting for Customer</h2>
+                            <p class="lead text-white-50 mb-4" style="max-width: 550px; margin: 0 auto;">
+                                Kiosk terminal is idle and ready. Scan the QR code with your mobile camera to begin printing.
+                            </p>
+                            <div class="d-inline-flex align-items-center gap-3 px-4 py-2 rounded-pill" style="background: rgba(255, 255, 255, 0.05); border: 1px solid rgba(255, 255, 255, 0.1);">
+                                <span class="small text-white-50"><i class="bi bi-check-circle-fill text-success me-1"></i> Spooler Ready</span>
+                                <span class="small text-white-50"><i class="bi bi-check-circle-fill text-success me-1"></i> Paper Trays Loaded</span>
+                                <span class="small text-white-50"><i class="bi bi-check-circle-fill text-success me-1"></i> Heuristic AI Active</span>
+                            </div>
+                        </div>
+
+                        <!-- 2. CUSTOMER CONNECTED STATE -->
+                        <div id="stateConnected" class="d-none">
+                            <div class="p-4 bg-primary bg-opacity-25 rounded-circle d-inline-block mb-4 text-primary">
+                                <i class="bi bi-phone display-3"></i>
+                            </div>
+                            <h2 class="display-6 fw-bold text-white mb-2">Customer Connected!</h2>
+                            <p class="lead text-info mb-4" id="connectedDesc">
+                                Smartphone connected to this kiosk. Waiting for document upload...
+                            </p>
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Loading...</span>
+                            </div>
+                        </div>
+
+                        <!-- 3. DOCUMENT UPLOADED / VALIDATING STATE -->
+                        <div id="stateDocument" class="d-none">
+                            <div class="p-4 bg-info bg-opacity-25 rounded-circle d-inline-block mb-3 text-info">
+                                <i class="bi bi-file-earmark-arrow-up display-3"></i>
+                            </div>
+                            <h3 class="fw-bold text-white mb-1" id="docTitle">Document Uploaded</h3>
+                            <div class="h4 text-info fw-bold mb-3" id="docName">Application.pdf</div>
+                            <p class="text-white-50 mb-3" id="docDesc">Validating document pages with AI Document Assistant...</p>
+                            <div class="badge bg-dark border text-light px-3 py-2 mb-2" id="docStats">3 Pages &bull; Black & White</div>
+                        </div>
+
+                        <!-- 4. AWAITING PAYMENT STATE -->
+                        <div id="statePayment" class="d-none">
+                            <div class="p-4 bg-warning bg-opacity-25 rounded-circle d-inline-block mb-3 text-warning">
+                                <i class="bi bi-wallet2 display-3"></i>
+                            </div>
+                            <h3 class="fw-bold text-white mb-1">Awaiting Demo Payment</h3>
+                            <div class="display-6 fw-extrabold text-warning mb-2" id="payAmount">₹10.00</div>
+                            <p class="text-white-50 mb-3" id="payDesc">Print options confirmed on phone. Awaiting simulated payment confirmation...</p>
+                            <div class="badge bg-warning bg-opacity-25 border border-warning text-warning-emphasis px-3 py-2 rounded-pill">
+                                DEMO MODE: No real money requested
+                            </div>
+                        </div>
+
+                        <!-- 5. QUEUED & PRINTING STATE -->
+                        <div id="statePrinting" class="d-none">
+                            <div class="p-4 bg-primary bg-opacity-25 rounded-circle d-inline-block mb-3 text-primary printing-roller-anim">
+                                <i class="bi bi-printer-fill display-3"></i>
+                            </div>
+                            <h2 class="display-6 fw-bold text-white mb-1" id="printStageTitle">Printing in Progress</h2>
+                            <p class="lead text-info mb-4" id="printStageDesc">Spooler active. Simulating paper output delivery...</p>
+                            
+                            <!-- Large Animated Progress Bar -->
+                            <div class="progress mx-auto mb-3" style="height: 18px; max-width: 550px; background: rgba(255, 255, 255, 0.1);">
+                                <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="kioskProgressBar" role="progressbar" style="width: 75%;"></div>
+                            </div>
+                            <div class="small text-white-50">Virtual Demonstration Thermal/Laser Spooler Adapter</div>
+                        </div>
+
+                        <!-- 6. COMPLETED STATE -->
+                        <div id="stateCompleted" class="d-none">
+                            <div class="p-4 bg-success bg-opacity-25 rounded-circle d-inline-block mb-3 text-success">
+                                <i class="bi bi-check-circle-fill display-2"></i>
+                            </div>
+                            <h2 class="display-5 fw-bold text-success mb-2">Printing Completed!</h2>
+                            <p class="lead text-white mb-3" id="completedDesc">
+                                Your printed document is ready in the kiosk output tray.
+                            </p>
+                            <div class="p-3 rounded-3 d-inline-block text-start mb-4" style="background: rgba(255, 255, 255, 0.08); min-width: 300px;">
+                                <div class="small text-white-50">Order Reference: <strong class="text-white" id="compRef">PAI-2026-XXXX</strong></div>
+                                <div class="small text-white-50">Document: <strong class="text-white" id="compDoc">Form.pdf</strong></div>
+                                <div class="small text-white-50">Status: <span class="badge bg-success">SIMULATED SUCCESS</span></div>
+                            </div>
+                            <div>
+                                <button class="btn btn-primary-custom px-4" id="btnNextCustomer">
+                                    <i class="bi bi-arrow-clockwise me-1"></i> Next Customer / Ready
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- 7. FAILED STATE -->
+                        <div id="stateFailed" class="d-none">
+                            <div class="p-4 bg-danger bg-opacity-25 rounded-circle d-inline-block mb-3 text-danger">
+                                <i class="bi bi-exclamation-triangle-fill display-3"></i>
+                            </div>
+                            <h3 class="fw-bold text-danger mb-2">Print Job Issue</h3>
+                            <p class="text-white-50 mb-3" id="failReason">A simulated hardware exception occurred.</p>
+                            <button class="btn btn-outline-light btn-sm" id="btnResetFailed">Reset Kiosk</button>
+                        </div>
+
+                    </div>
+
+                    <!-- Bottom Details Bar -->
+                    <div class="pt-4 border-top border-secondary border-opacity-25 d-flex flex-column flex-md-row justify-content-between align-items-center gap-2 small text-white-50">
+                        <div>
+                            <i class="bi bi-info-circle-fill text-primary me-1"></i>
+                            <strong>SIMULATED PRINTING:</strong> No physical hardware is triggered in college prototype mode.
+                        </div>
+                        <div>
+                            Location: <span th:text="${kiosk.location}">Laptop Display Terminal</span>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <!-- Bootstrap 5 JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+        const kioskId = /*[[${kiosk.kioskId}]]*/ 'LAPTOP001';
+
+        // Clock Update
+        function updateClock() {
+            const now = new Date();
+            const clockEl = document.getElementById('liveClock');
+            if (clockEl) {
+                clockEl.textContent = now.toLocaleTimeString();
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // Fullscreen Toggle
+        const btnFullscreen = document.getElementById('btnFullscreen');
+        btnFullscreen.addEventListener('click', () => {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch(err => {
+                    console.log('Error attempting to enable fullscreen:', err.message);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        });
+
+        // Stage Containers
+        const stateWaiting = document.getElementById('stateWaiting');
+        const stateConnected = document.getElementById('stateConnected');
+        const stateDocument = document.getElementById('stateDocument');
+        const statePayment = document.getElementById('statePayment');
+        const statePrinting = document.getElementById('statePrinting');
+        const stateCompleted = document.getElementById('stateCompleted');
+        const stateFailed = document.getElementById('stateFailed');
+
+        const stageBadge = document.getElementById('stageBadge');
+        const kioskProgressBar = document.getElementById('kioskProgressBar');
+        const printStageTitle = document.getElementById('printStageTitle');
+        const printStageDesc = document.getElementById('printStageDesc');
+
+        const docTitle = document.getElementById('docTitle');
+        const docName = document.getElementById('docName');
+        const docDesc = document.getElementById('docDesc');
+        const docStats = document.getElementById('docStats');
+
+        const payAmount = document.getElementById('payAmount');
+        const payDesc = document.getElementById('payDesc');
+
+        const compRef = document.getElementById('compRef');
+        const compDoc = document.getElementById('compDoc');
+        const failReason = document.getElementById('failReason');
+
+        function hideAllStates() {
+            stateWaiting.classList.add('d-none');
+            stateConnected.classList.add('d-none');
+            stateDocument.classList.add('d-none');
+            statePayment.classList.add('d-none');
+            statePrinting.classList.add('d-none');
+            stateCompleted.classList.add('d-none');
+            stateFailed.classList.add('d-none');
+        }
+
+        // Live Polling Function (every 2 seconds)
+        async function pollKioskStatus() {
+            try {
+                const response = await fetch('/kiosk/api/status/' + kioskId);
+                if (response.ok) {
+                    const data = await response.json();
+                    renderKioskStage(data);
+                }
+            } catch (err) {
+                console.warn('Kiosk poll network error:', err);
+            }
+        }
+
+        function renderKioskStage(data) {
+            stageBadge.textContent = data.stage;
+
+            hideAllStates();
+
+            switch (data.stage) {
+                case 'CUSTOMER_CONNECTED':
+                    stateConnected.classList.remove('d-none');
+                    stageBadge.className = 'badge bg-info px-3 py-2 rounded-pill';
+                    break;
+
+                case 'DOCUMENT_UPLOADED':
+                case 'VALIDATING_DOCUMENT':
+                    stateDocument.classList.remove('d-none');
+                    stageBadge.className = 'badge bg-primary px-3 py-2 rounded-pill';
+                    docTitle.textContent = data.stageTitle;
+                    docName.textContent = data.documentName || 'Document';
+                    docDesc.textContent = data.stageDescription;
+                    docStats.textContent = (data.selectedPages || data.totalPages) + ' Page(s) \u2022 ' + (data.printType || 'B&W');
+                    break;
+
+                case 'AWAITING_PAYMENT':
+                case 'PRINT_OPTIONS_CONFIRMED':
+                    statePayment.classList.remove('d-none');
+                    stageBadge.className = 'badge bg-warning text-dark px-3 py-2 rounded-pill';
+                    payAmount.textContent = data.totalAmount || '₹0.00';
+                    payDesc.textContent = data.stageDescription;
+                    break;
+
+                case 'QUEUED':
+                    statePrinting.classList.remove('d-none');
+                    stageBadge.className = 'badge bg-indigo px-3 py-2 rounded-pill';
+                    printStageTitle.textContent = 'Queued for Printing';
+                    printStageDesc.textContent = data.stageDescription;
+                    kioskProgressBar.style.width = '55%';
+                    kioskProgressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-warning';
+                    break;
+
+                case 'PRINTING':
+                    statePrinting.classList.remove('d-none');
+                    stageBadge.className = 'badge bg-primary px-3 py-2 rounded-pill';
+                    printStageTitle.textContent = 'Printing in Progress...';
+                    printStageDesc.textContent = 'Hardware spooler active: processing ' + data.documentName + ' (' + data.copies + ' copies)...';
+                    kioskProgressBar.style.width = '85%';
+                    kioskProgressBar.className = 'progress-bar progress-bar-striped progress-bar-animated bg-primary';
+                    break;
+
+                case 'COMPLETED':
+                    stateCompleted.classList.remove('d-none');
+                    stageBadge.className = 'badge bg-success px-3 py-2 rounded-pill';
+                    compRef.textContent = data.orderReference || 'PAI-COMPLETED';
+                    compDoc.textContent = data.documentName || 'Document';
+                    break;
+
+                case 'FAILED':
+                    stateFailed.classList.remove('d-none');
+                    stageBadge.className = 'badge bg-danger px-3 py-2 rounded-pill';
+                    failReason.textContent = data.failureReason || data.stageDescription;
+                    break;
+
+                case 'WAITING_FOR_CUSTOMER':
+                default:
+                    stateWaiting.classList.remove('d-none');
+                    stageBadge.className = 'badge bg-secondary px-3 py-2 rounded-pill';
+                    break;
+            }
+        }
+
+        // Reset buttons
+        async function resetKiosk() {
+            try {
+                await fetch('/kiosk/api/reset/' + kioskId, { method: 'POST' });
+                pollKioskStatus();
+            } catch (e) {}
+        }
+
+        document.getElementById('btnResetKiosk').addEventListener('click', resetKiosk);
+        document.getElementById('btnNextCustomer').addEventListener('click', resetKiosk);
+        document.getElementById('btnResetFailed').addEventListener('click', resetKiosk);
+
+        // Start polling every 2 seconds
+        setInterval(pollKioskStatus, 2000);
+        pollKioskStatus();
+    </script>
+</body>
+</html>

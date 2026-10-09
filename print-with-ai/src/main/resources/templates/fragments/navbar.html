@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security">
+<nav th:fragment="navbar" class="navbar navbar-expand-lg navbar-custom">
+    <div class="container">
+        <a class="navbar-brand d-flex align-items-center gap-2" th:href="@{/}">
+            <span class="fs-4 text-primary"><i class="bi bi-printer-fill"></i></span>
+            <span class="brand-title fs-4" th:text="#{app.name}">PRINT WITH AI</span>
+            <span class="brand-badge ms-1 d-none d-sm-inline">PROTOTYPE</span>
+        </a>
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav ms-auto align-items-lg-center gap-lg-2">
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold text-secondary" th:href="@{/}" th:text="#{nav.home}"><i class="bi bi-house-door me-1"></i> Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold text-secondary" th:href="@{/print/new(kioskId='TAHSIL001')}" th:text="#{nav.start_print}"><i class="bi bi-cloud-arrow-up me-1"></i> Start Printing</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold text-secondary" th:href="@{/order/track}" th:text="#{nav.track_order}"><i class="bi bi-geo-alt me-1"></i> Track Order</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold text-secondary" th:href="@{/kiosk}" th:text="#{nav.kiosks}"><i class="bi bi-qr-code-scan me-1"></i> Kiosks & QR</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold text-secondary" th:href="@{/applications}"><i class="bi bi-file-earmark-text me-1"></i> <span th:text="#{nav.applications}">Applications</span></a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link fw-semibold text-primary" th:href="@{/kiosk/display}"><i class="bi bi-display me-1"></i> Kiosk Display</a>
+                </li>
+
+                <!-- Language Selector (English, मराठी, हिंदी) -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle fw-semibold text-primary d-flex align-items-center gap-1" href="#" id="langDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="bi bi-translate"></i>
+                        <span th:text="#{nav.language}">Language</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end shadow-sm" aria-labelledby="langDropdown">
+                        <li><a class="dropdown-item" th:href="@{''(lang='en')}"><i class="bi bi-check2 text-primary me-2"></i>English (EN)</a></li>
+                        <li><a class="dropdown-item" th:href="@{''(lang='mr')}"><i class="bi bi-globe me-2"></i>मराठी (MR)</a></li>
+                        <li><a class="dropdown-item" th:href="@{''(lang='hi')}"><i class="bi bi-globe me-2"></i>हिंदी (HI)</a></li>
+                    </ul>
+                </li>
+
+                <!-- Admin Link -->
+                <li class="nav-item ms-lg-2" sec:authorize="!isAuthenticated()">
+                    <a class="btn btn-sm btn-secondary-custom d-flex align-items-center gap-1" th:href="@{/admin/login}">
+                        <i class="bi bi-shield-lock"></i>
+                        <span th:text="#{nav.admin}">Admin Portal</span>
+                    </a>
+                </li>
+                <li class="nav-item ms-lg-2" sec:authorize="isAuthenticated()">
+                    <div class="d-flex align-items-center gap-2">
+                        <a class="btn btn-sm btn-primary-custom" th:href="@{/admin/dashboard}">
+                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                        </a>
+                        <form th:action="@{/admin/logout}" method="post" class="d-inline">
+                            <button type="submit" class="btn btn-sm btn-outline-danger">
+                                <i class="bi bi-box-arrow-right"></i>
+                            </button>
+                        </form>
+                    </div>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+</html>

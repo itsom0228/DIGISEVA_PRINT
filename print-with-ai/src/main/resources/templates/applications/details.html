@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title th:text="${template.title} + ' — Print with AI'">Application Template Details</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <!-- Custom Style -->
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .sheet-container {
+            background: #ffffff;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+            padding: 2.5rem;
+            min-height: 550px;
+            font-family: 'Courier New', Courier, monospace, 'Mangal', sans-serif;
+            white-space: pre-wrap;
+            line-height: 1.7;
+            color: #0f172a;
+            font-size: 1rem;
+        }
+        .sheet-header-line {
+            border-bottom: 2px solid #2563eb;
+            margin-bottom: 1.5rem;
+            padding-bottom: 0.5rem;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Header Navigation -->
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container py-4 py-lg-5">
+        <!-- Breadcrumbs -->
+        <nav aria-label="breadcrumb" class="mb-3">
+            <ol class="breadcrumb small">
+                <li class="breadcrumb-item"><a th:href="@{/}" class="text-decoration-none">Home</a></li>
+                <li class="breadcrumb-item"><a th:href="@{/applications}" class="text-decoration-none">Applications</a></li>
+                <li class="breadcrumb-item"><a th:href="@{'/applications/category/' + ${template.category.slug}}" class="text-decoration-none" th:text="${template.category.name}">Category</a></li>
+                <li class="breadcrumb-item active" aria-current="page" th:text="${template.title}">Template</li>
+            </ol>
+        </nav>
+
+        <!-- Mandatory Disclaimer Alert -->
+        <div class="alert alert-warning border-warning-subtle d-flex align-items-start gap-3 shadow-sm mb-4">
+            <i class="bi bi-exclamation-triangle-fill fs-4 text-warning flex-shrink-0"></i>
+            <div>
+                <strong class="d-block mb-1">Standard Institutional Template Notice</strong>
+                <span class="small">
+                    These templates are provided for convenience. Requirements and prescribed formats may vary by office. Confirm the current requirements with the relevant authority before submitting an application.
+                </span>
+            </div>
+        </div>
+
+        <!-- Template Header Title Card -->
+        <div class="glass-card p-4 mb-4">
+            <div class="d-flex flex-wrap align-items-center justify-content-between gap-3">
+                <div>
+                    <div class="d-flex align-items-center gap-2 mb-2">
+                        <span class="badge" th:classappend="${template.officialTemplate ? 'badge-official' : 'badge-sample'}">
+                            <i class="bi" th:classappend="${template.officialTemplate ? 'bi-shield-check me-1' : 'bi-file-text me-1'}"></i>
+                            <span th:text="${template.officialTemplate ? 'OFFICIALLY VERIFIED FORMAT' : 'SAMPLE APPLICATION FORMAT'}">SAMPLE FORMAT</span>
+                        </span>
+                        <span class="badge bg-primary-subtle text-primary border border-primary-subtle">
+                            <i class="bi" th:classappend="' ' + ${template.category.icon}"></i>
+                            <span th:text="${template.category.name}">Category</span>
+                        </span>
+                        <span class="badge bg-secondary-subtle text-secondary" th:text="${template.languageDisplayName}">Language</span>
+                    </div>
+                    <h1 class="h2 fw-bold text-slate-900 mb-1" th:text="${template.title}">Template Title</h1>
+                    <p class="text-muted mb-0 small" th:text="${template.purpose != null ? template.purpose : template.description}">Template Purpose</p>
+                </div>
+
+                <!-- Fast Actions -->
+                <div class="d-flex flex-wrap gap-2">
+                    <a th:href="@{'/applications/template/' + ${template.id} + '/download'}" class="btn btn-outline-secondary btn-sm d-flex align-items-center gap-1">
+                        <i class="bi bi-download"></i> Download Blank Sample
+                    </a>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+            <!-- Left Column: Interactive Customization Form -->
+            <div class="col-lg-5">
+                <div class="card border-0 shadow-sm rounded-4 sticky-top" style="top: 80px;">
+                    <div class="card-header bg-white border-bottom py-3">
+                        <div class="d-flex align-items-center justify-content-between">
+                            <h5 class="fw-bold mb-0 text-slate-900">
+                                <i class="bi bi-pencil-square text-primary me-2"></i>Personalize Details
+                            </h5>
+                            <button type="button" class="btn btn-sm btn-outline-secondary" id="toggleDirectEditBtn">
+                                <i class="bi bi-code-slash me-1"></i> Edit Full Text
+                            </button>
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <form id="templateForm" method="post" th:object="${customization}">
+                            <!-- Hidden Full Customized Text -->
+                            <input type="hidden" id="customizedContentInput" name="customizedContent" th:field="*{customizedContent}">
+
+                            <!-- Structured Fields Container -->
+                            <div id="structuredFields">
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-secondary">Applicant / Student Name *</label>
+                                    <input type="text" id="inputApplicantName" name="applicantName" class="form-control"
+                                           placeholder="e.g. Ramesh Shankar Patil" th:field="*{applicantName}">
+                                </div>
+
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label small fw-semibold text-secondary">Contact Number</label>
+                                        <input type="text" id="inputContactNumber" name="contactNumber" class="form-control"
+                                               placeholder="e.g. 9876543210" th:field="*{contactNumber}">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small fw-semibold text-secondary">Date</label>
+                                        <input type="text" id="inputDate" name="date" class="form-control"
+                                               th:field="*{date}">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-secondary">Recipient Officer / Authority Title</label>
+                                    <input type="text" id="inputRecipientTitle" name="recipientTitle" class="form-control"
+                                           placeholder="e.g. The Principal / The Tahsildar" th:field="*{recipientTitle}">
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-secondary">College / Office / Branch Name</label>
+                                    <input type="text" id="inputOfficeName" name="officeName" class="form-control"
+                                           placeholder="e.g. Govt College of Engineering, Pune" th:field="*{officeName}">
+                                </div>
+
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <label class="form-label small fw-semibold text-secondary">Roll / Application / Ref No</label>
+                                        <input type="text" id="inputReferenceNumber" name="referenceNumber" class="form-control"
+                                               placeholder="e.g. COMP-2024-042" th:field="*{referenceNumber}">
+                                    </div>
+                                    <div class="col-6">
+                                        <label class="form-label small fw-semibold text-secondary">Department / Address</label>
+                                        <input type="text" id="inputAddress" name="address" class="form-control"
+                                               placeholder="e.g. Computer Engineering" th:field="*{address}">
+                                    </div>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label class="form-label small fw-semibold text-secondary">Purpose of Request</label>
+                                    <input type="text" id="inputPurpose" name="purpose" class="form-control"
+                                           placeholder="e.g. State Merit Scholarship application" th:field="*{purpose}">
+                                </div>
+                            </div>
+
+                            <!-- Direct Raw Textarea (Hidden by default) -->
+                            <div id="rawTextEditor" class="d-none mb-3">
+                                <label class="form-label small fw-semibold text-secondary">Direct Letter Editor (Edit Any Line)</label>
+                                <textarea id="rawTextarea" class="form-control font-monospace" rows="12"></textarea>
+                                <div class="form-text small">Edits made here override individual fields and will be reflected on the PDF.</div>
+                            </div>
+
+                            <!-- Target Kiosk Selection for Direct Printing -->
+                            <div class="mb-4 pt-3 border-top">
+                                <label class="form-label small fw-semibold text-slate-900">
+                                    <i class="bi bi-display text-primary me-1"></i> Send to Kiosk Display
+                                </label>
+                                <select name="kioskId" class="form-select bg-light" th:field="*{kioskId}">
+                                    <option th:each="k : ${kiosks}"
+                                            th:value="${k.kioskId}"
+                                            th:text="${k.kioskId} + ' — ' + ${k.name} + ' (' + ${k.location} + ')'">
+                                    </option>
+                                </select>
+                                <div class="form-text small">Select your laptop terminal (LAPTOP001) or demo kiosk.</div>
+                            </div>
+
+                            <!-- Action Buttons -->
+                            <div class="d-grid gap-2">
+                                <button type="submit"
+                                        th:formaction="@{'/applications/template/' + ${template.id} + '/print-order'}"
+                                        class="btn btn-primary-custom py-2 fw-bold d-flex align-items-center justify-content-center gap-2">
+                                    <i class="bi bi-printer-fill fs-5"></i>
+                                    <span>Print Using Print with AI</span>
+                                </button>
+
+                                <button type="submit"
+                                        th:formaction="@{'/applications/template/' + ${template.id} + '/download'}"
+                                        class="btn btn-outline-secondary py-2 d-flex align-items-center justify-content-center gap-2">
+                                    <i class="bi bi-file-earmark-pdf-fill text-danger fs-5"></i>
+                                    <span>Download Customized PDF</span>
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Guidelines & Required Documents Card -->
+                <div class="card border-0 shadow-sm rounded-4 mt-4" th:if="${template.requiredDocuments != null or template.instructions != null}">
+                    <div class="card-body p-4">
+                        <div th:if="${template.requiredDocuments != null and !template.requiredDocuments.isEmpty()}" class="mb-3">
+                            <h6 class="fw-bold text-slate-900 mb-2">
+                                <i class="bi bi-paperclip text-primary me-1"></i> Required Documents:
+                            </h6>
+                            <p class="small text-secondary mb-0 bg-light p-3 rounded-3" th:text="${template.requiredDocuments}">Documents list</p>
+                        </div>
+                        <div th:if="${template.instructions != null and !template.instructions.isEmpty()}">
+                            <h6 class="fw-bold text-slate-900 mb-2">
+                                <i class="bi bi-info-circle text-primary me-1"></i> Submission Instructions:
+                            </h6>
+                            <p class="small text-secondary mb-0 bg-light p-3 rounded-3" th:text="${template.instructions}">Submission instructions</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Live Printable Sheet Preview -->
+            <div class="col-lg-7">
+                <div class="d-flex justify-content-between align-items-center mb-2 px-1">
+                    <span class="small fw-bold text-muted text-uppercase">
+                        <i class="bi bi-eye-fill me-1"></i> Live Document Preview (A4 Format)
+                    </span>
+                    <span class="badge bg-light text-secondary border">Auto-Formatted</span>
+                </div>
+
+                <!-- Printable Sheet -->
+                <div class="sheet-container" id="sheetPreview">
+                    <div class="sheet-header-line d-flex justify-content-between align-items-center">
+                        <span class="fw-bold small text-primary" th:text="${template.title}">Application Header</span>
+                        <span class="small text-muted" th:text="${template.officialTemplate ? 'OFFICIAL PRESCRIBED' : 'SAMPLE APPLICATION'}">SAMPLE FORMAT</span>
+                    </div>
+                    <div id="sheetBody" th:text="${template.templateContent}">
+                        Template Content Goes Here
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Hidden Raw Template for Client Substitution -->
+    <div id="rawTemplateStorage" class="d-none" th:text="${template.templateContent}"></div>
+
+    <!-- Footer -->
+    <footer class="mt-auto py-4 bg-white border-top">
+        <div class="container text-center text-muted small">
+            <p class="mb-1 fw-semibold text-slate-800">PRINT WITH AI — AI-Assisted Smart Printing and Document Kiosk</p>
+            <p class="mb-0">Application formats are provided as general samples. Requirements and formats may vary by institution.</p>
+        </div>
+    </footer>
+
+    <!-- Bootstrap Bundle JS -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <!-- Client-side Interactive Form & Live Replacement Script -->
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const rawTemplate = document.getElementById('rawTemplateStorage').textContent;
+            const sheetBody = document.getElementById('sheetBody');
+            const customizedInput = document.getElementById('customizedContentInput');
+            const rawTextarea = document.getElementById('rawTextarea');
+            const rawTextEditor = document.getElementById('rawTextEditor');
+            const structuredFields = document.getElementById('structuredFields');
+            const toggleDirectEditBtn = document.getElementById('toggleDirectEditBtn');
+
+            let isDirectEditMode = false;
+
+            function updatePreview() {
+                if (isDirectEditMode) {
+                    sheetBody.textContent = rawTextarea.value;
+                    customizedInput.value = rawTextarea.value;
+                    return;
+                }
+
+                const applicant = document.getElementById('inputApplicantName').value.trim() || '[Student / Applicant Name]';
+                const contact = document.getElementById('inputContactNumber').value.trim() || '[Contact Number]';
+                const date = document.getElementById('inputDate').value.trim() || '[Date]';
+                const recipient = document.getElementById('inputRecipientTitle').value.trim() || '[Principal / Officer Title]';
+                const office = document.getElementById('inputOfficeName').value.trim() || '[College / Office Name]';
+                const refNo = document.getElementById('inputReferenceNumber').value.trim() || '[Roll No / Application No]';
+                const address = document.getElementById('inputAddress').value.trim() || '[Address / Department]';
+                const purpose = document.getElementById('inputPurpose').value.trim() || '[Purpose of Request]';
+
+                let replaced = rawTemplate
+                    .replace(/\[Applicant Name\]/g, applicant)
+                    .replace(/\[Student Name\]/g, applicant)
+                    .replace(/\[Name of Applicant\]/g, applicant)
+                    .replace(/\[अर्जदाराचे नाव\]/g, applicant)
+                    .replace(/\[विद्यार्थ्याचे नाव\]/g, applicant)
+                    .replace(/\[Contact Number\]/g, contact)
+                    .replace(/\[Mobile Number\]/g, contact)
+                    .replace(/\[मोबाईल क्र\.\]/g, contact)
+                    .replace(/\[संपर्क क्र\.\]/g, contact)
+                    .replace(/\[Address\]/g, address)
+                    .replace(/\[Address \/ Department\]/g, address)
+                    .replace(/\[पत्ता\]/g, address)
+                    .replace(/\[Principal \/ Officer Title\]/g, recipient)
+                    .replace(/\[Officer Title\]/g, recipient)
+                    .replace(/\[The Principal\]/g, recipient)
+                    .replace(/\[College Name\]/g, office)
+                    .replace(/\[Office Name\]/g, office)
+                    .replace(/\[महाविद्यालय \/ कार्यालय नाव\]/g, office)
+                    .replace(/\[Roll Number\]/g, refNo)
+                    .replace(/\[Roll No\]/g, refNo)
+                    .replace(/\[हजेरी क्र\. \/ नोंद क्र\.\]/g, refNo)
+                    .replace(/\[Application Number\]/g, refNo)
+                    .replace(/\[Purpose\]/g, purpose)
+                    .replace(/\[Purpose of Request\]/g, purpose)
+                    .replace(/\[कारणास्तव \/ उद्देश\]/g, purpose)
+                    .replace(/\[Date\]/g, date)
+                    .replace(/\[दिनांक\]/g, date);
+
+                sheetBody.textContent = replaced;
+                customizedInput.value = replaced;
+                rawTextarea.value = replaced;
+            }
+
+            // Bind input change events
+            const inputs = document.querySelectorAll('#structuredFields input');
+            inputs.forEach(input => {
+                input.addEventListener('input', updatePreview);
+            });
+
+            rawTextarea.addEventListener('input', function() {
+                sheetBody.textContent = rawTextarea.value;
+                customizedInput.value = rawTextarea.value;
+            });
+
+            toggleDirectEditBtn.addEventListener('click', function() {
+                isDirectEditMode = !isDirectEditMode;
+                if (isDirectEditMode) {
+                    structuredFields.classList.add('d-none');
+                    rawTextEditor.classList.remove('d-none');
+                    toggleDirectEditBtn.innerHTML = '<i class="bi bi-card-list me-1"></i> Form Fields Mode';
+                    rawTextarea.focus();
+                } else {
+                    structuredFields.classList.remove('d-none');
+                    rawTextEditor.classList.add('d-none');
+                    toggleDirectEditBtn.innerHTML = '<i class="bi bi-code-slash me-1"></i> Edit Full Text';
+                    updatePreview();
+                }
+            });
+
+            // Initial load
+            updatePreview();
+        });
+    </script>
+</body>
+</html>

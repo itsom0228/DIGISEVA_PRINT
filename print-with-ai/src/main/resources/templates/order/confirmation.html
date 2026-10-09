@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Order Confirmation & Printing Status — PRINT WITH AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+
+                <!-- Success Alert -->
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm mb-4" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}">Success</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- Confirmation Card -->
+                <div class="glass-card p-4 p-md-5 text-center mb-4">
+                    <div class="d-inline-flex p-3 rounded-circle bg-success-subtle text-success mb-3">
+                        <i class="bi bi-printer-fill display-4"></i>
+                    </div>
+                    <h2 class="fw-bold mb-1">Print Job Submitted!</h2>
+                    <p class="text-secondary mb-4">Your document has been sent to the kiosk printing queue.</p>
+
+                    <!-- SIMULATED PRINTING DISCLAIMER -->
+                    <div class="badge bg-light text-dark border p-2 mb-4 d-inline-block">
+                        <i class="bi bi-info-circle-fill text-primary me-1"></i>
+                        SIMULATED PRINTING — No physical printer is triggered in demo mode.
+                    </div>
+
+                    <!-- Live Progress Stage -->
+                    <div class="p-4 bg-light rounded-3 border mb-4 text-start">
+                        <div class="d-flex justify-content-between align-items-center mb-2">
+                            <span class="fw-bold text-slate-800" id="liveStatusText" th:text="${job.jobStatus.displayName}">Printing in Progress</span>
+                            <span class="badge badge-status" th:classappend="'badge-status-' + ${job.jobStatus.name()}" id="liveStatusBadge" th:text="${job.jobStatus.name()}">PRINTING</span>
+                        </div>
+                        <div class="progress mb-2" style="height: 10px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="liveProgressBar" role="progressbar" style="width: 60%;"></div>
+                        </div>
+                        <div class="small text-muted" id="liveStatusDesc">Hardware spooler active. Simulating output tray delivery...</div>
+                    </div>
+
+                    <!-- Order Details Summary Grid -->
+                    <div class="row g-3 text-start small mb-4">
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-white rounded border">
+                                <span class="text-muted">Order Reference:</span>
+                                <div class="fw-bold text-primary fs-6" th:text="${job.publicReference}">PAI-2026-XXXX</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-white rounded border">
+                                <span class="text-muted">Tracking Token:</span>
+                                <div class="fw-bold text-dark fs-6" th:text="${job.trackingToken}">TRK-XXXX-XXXX</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-white rounded border">
+                                <span class="text-muted">Kiosk Location:</span>
+                                <div class="fw-bold" th:text="${job.kioskName}">Tahsil Demonstration Kiosk</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-white rounded border">
+                                <span class="text-muted">Document:</span>
+                                <div class="fw-bold" th:text="${job.originalFilename}">Doc.pdf</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-white rounded border">
+                                <span class="text-muted">Paid Amount (Demo):</span>
+                                <div class="fw-bold text-success fs-6" th:text="'₹' + ${job.totalAmount}">₹10.00</div>
+                            </div>
+                        </div>
+                        <div class="col-sm-6">
+                            <div class="p-3 bg-white rounded border">
+                                <span class="text-muted">Print Mode:</span>
+                                <div class="fw-bold" th:text="${job.printType.displayName} + ' (' + ${job.copies} + ' copies)'">Black & White (1 copy)</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Buttons -->
+                    <div class="d-flex flex-wrap justify-content-center gap-3">
+                        <a th:href="@{/order/track/{token}(token=${job.trackingToken})}" class="btn btn-primary-custom">
+                            <i class="bi bi-geo-alt me-1"></i> Open Order Tracking Page
+                        </a>
+                        <a th:href="@{/print/new(kioskId=${job.kioskId})}" class="btn btn-secondary-custom">
+                            <i class="bi bi-plus-circle me-1"></i> Print Another Document
+                        </a>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script th:inline="javascript">
+        const trackingToken = /*[[${job.trackingToken}]]*/ '';
+        const liveStatusText = document.getElementById('liveStatusText');
+        const liveStatusBadge = document.getElementById('liveStatusBadge');
+        const liveProgressBar = document.getElementById('liveProgressBar');
+        const liveStatusDesc = document.getElementById('liveStatusDesc');
+
+        let intervalId = setInterval(checkStatus, 1500);
+
+        async function checkStatus() {
+            try {
+                const response = await fetch('/order/api/status/' + trackingToken);
+                if (response.ok) {
+                    const data = await response.json();
+                    liveStatusText.textContent = data.jobStatusDisplay;
+                    liveStatusBadge.textContent = data.jobStatus;
+                    liveStatusBadge.className = 'badge badge-status badge-status-' + data.jobStatus;
+
+                    if (data.jobStatus === 'QUEUED') {
+                        liveProgressBar.style.width = '40%';
+                        liveStatusDesc.textContent = 'Document placed in printer buffer queue...';
+                    } else if (data.jobStatus === 'PRINTING') {
+                        liveProgressBar.style.width = '75%';
+                        liveStatusDesc.textContent = 'Printer rollers and laser/ink simulation in progress...';
+                    } else if (data.jobStatus === 'COMPLETED') {
+                        liveProgressBar.style.width = '100%';
+                        liveProgressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
+                        liveProgressBar.classList.add('bg-success');
+                        liveStatusDesc.textContent = 'Done! Document is ready in kiosk pickup tray. (SIMULATION)';
+                        clearInterval(intervalId);
+                    } else if (data.jobStatus === 'FAILED' || data.jobStatus === 'CANCELLED') {
+                        liveProgressBar.style.width = '100%';
+                        liveProgressBar.classList.add('bg-danger');
+                        clearInterval(intervalId);
+                    }
+                }
+            } catch (e) {
+                console.warn('Polling error:', e);
+            }
+        }
+    </script>
+</body>
+</html>

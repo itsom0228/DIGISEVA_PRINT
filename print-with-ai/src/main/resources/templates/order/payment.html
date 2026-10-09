@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Complete Demo Payment — PRINT WITH AI</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
+    <link th:href="@{/css/style.css}" rel="stylesheet">
+</head>
+<body>
+
+    <div th:replace="~{fragments/navbar :: navbar}"></div>
+
+    <div class="container py-5">
+        <div class="row justify-content-center">
+            <div class="col-lg-8">
+
+                <!-- Alert Messages -->
+                <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                    <span th:text="${errorMessage}">Error</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+
+                <!-- DEMO MODE DISCLAIMER BANNER -->
+                <div class="alert alert-warning border-warning-subtle shadow-sm mb-4 d-flex align-items-center gap-3">
+                    <i class="bi bi-shield-exclamation fs-2 text-warning flex-shrink-0"></i>
+                    <div>
+                        <h6 class="fw-bold mb-1" th:text="#{payment.disclaimer}">DEMO MODE: No real payment is being processed.</h6>
+                        <div class="small text-dark">
+                            This is an academic prototype demonstration. No real financial credentials, debit/credit cards, or UPI PINs are ever collected or required.
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Form Card -->
+                <div class="glass-card p-4 p-md-5">
+                    <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom flex-wrap gap-2">
+                        <div>
+                            <span class="badge bg-secondary mb-1" th:text="'ORDER REF: ' + ${job.publicReference}">PAI-2026-XXXX</span>
+                            <h3 class="fw-bold mb-0" th:text="#{payment.title}">Complete Demo Payment</h3>
+                        </div>
+                        <div class="text-end">
+                            <div class="small text-muted">Amount Due:</div>
+                            <div class="fs-2 fw-extrabold text-primary" th:text="'₹' + ${job.totalAmount}">₹10.00</div>
+                        </div>
+                    </div>
+
+                    <!-- Order Configuration Review -->
+                    <div class="p-3 bg-light rounded-3 mb-4">
+                        <div class="row g-2 small">
+                            <div class="col-sm-6">
+                                <span class="text-muted">Document:</span> <strong th:text="${job.originalFilename}">Doc.pdf</strong>
+                            </div>
+                            <div class="col-sm-6">
+                                <span class="text-muted">Kiosk:</span> <strong th:text="${job.kioskName}">Tahsil Demo Kiosk</strong>
+                            </div>
+                            <div class="col-sm-6">
+                                <span class="text-muted">Print Mode:</span> <strong th:text="${job.printType.displayName}">Black & White</strong>
+                            </div>
+                            <div class="col-sm-6">
+                                <span class="text-muted">Pages & Copies:</span> <strong th:text="${job.selectedPageCount} + ' page(s) × ' + ${job.copies} + ' copy'">5 pages × 1 copy</strong>
+                            </div>
+                        </div>
+                    </div>
+
+                    <form th:action="@{/print/payment/{token}(token=${job.trackingToken})}" method="post">
+                        <label class="form-label fw-bold mb-3" th:text="#{payment.select_mode}">Select Payment Method:</label>
+
+                        <!-- UPI Tab & Counter Cash Options -->
+                        <div class="row g-3 mb-4">
+                            <!-- UPI Payment Card -->
+                            <div class="col-md-6">
+                                <div class="card p-3 h-100 border-primary" style="background: #f0f7ff;">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="paymentMode" id="modeUpi" value="DEMO_UPI" checked>
+                                        <label class="form-check-label fw-bold" for="modeUpi" th:text="#{payment.upi}">
+                                            Demo UPI (Simulated QR)
+                                        </label>
+                                    </div>
+                                    
+                                    <!-- QR Image -->
+                                    <div class="text-center my-2 p-2 bg-white rounded border d-inline-block mx-auto">
+                                        <img th:src="'data:image/png;base64,' + ${upiQrBase64}" alt="Simulated UPI QR" style="width: 140px; height: 140px;">
+                                        <div class="small text-muted mt-1">UPI ID: printwithai.demo@upi</div>
+                                    </div>
+                                    
+                                    <div class="mt-2">
+                                        <input type="text" class="form-control form-control-sm" name="simulatedUpiId" placeholder="Simulated UPI handle (optional)" value="student@okhdfcbank">
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Cash at Counter Card -->
+                            <div class="col-md-6">
+                                <div class="card p-3 h-100 border">
+                                    <div class="form-check mb-2">
+                                        <input class="form-check-input" type="radio" name="paymentMode" id="modeCash" value="DEMO_CASH">
+                                        <label class="form-check-label fw-bold" for="modeCash" th:text="#{payment.cash}">
+                                            Demo Cash at Counter
+                                        </label>
+                                    </div>
+                                    <p class="text-muted small">
+                                        Select this option to simulate an operator receiving cash directly at the kiosk window or service desk.
+                                    </p>
+                                    <div class="mt-auto p-2 bg-light rounded text-center small text-secondary">
+                                        <i class="bi bi-cash-coin me-1"></i> Instant Counter Approval
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid">
+                            <button type="submit" class="btn btn-lg btn-primary-custom">
+                                <i class="bi bi-check-circle-fill me-2"></i>
+                                <span th:text="#{payment.pay_btn}">Confirm Demo Payment</span>
+                            </button>
+                        </div>
+                    </form>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <div th:replace="~{fragments/footer :: footer}"></div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>
