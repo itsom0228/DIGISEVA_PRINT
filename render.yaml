@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: digiseva-print
+    env: docker
+    plan: free
+    region: singapore
+    dockerfilePath: Dockerfile
+    healthCheckPath: /
+    envVars:
+      - key: SPRING_PROFILES_ACTIVE
+        value: demo
+      - key: APP_BASE_URL
+        fromService:
+          type: web
+          name: digiseva-print
+          property: host
