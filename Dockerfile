@@ -35,5 +35,5 @@ COPY --from=build /workspace/print-with-ai/target/*.jar app.jar
 # Default Port (Render sets $PORT dynamically)
 EXPOSE 8080
 
-# Start DigiSeva Print Spring Boot Application in Headless Cloud Mode
-ENTRYPOINT ["java", "-Djava.awt.headless=true", "-Djava.security.egd=file:/dev/./urandom", "-Dspring.profiles.active=demo", "-jar", "app.jar"]
+# Start DigiSeva Print Spring Boot Application in Headless Cloud Mode with 512MB RAM constraints
+ENTRYPOINT ["java", "-Djava.awt.headless=true", "-Djava.security.egd=file:/dev/./urandom", "-Dspring.profiles.active=demo", "-Xmx320m", "-Xms128m", "-XX:+UseSerialGC", "-XX:MaxMetaspaceSize=110m", "-Xss512k", "-XX:CompressedClassSpaceSize=32m", "-jar", "app.jar"]

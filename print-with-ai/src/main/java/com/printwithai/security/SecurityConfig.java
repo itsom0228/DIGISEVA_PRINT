@@ -52,7 +52,7 @@ public class SecurityConfig {
                 // Static resources
                 .requestMatchers("/css/**", "/js/**", "/images/**", "/fonts/**", "/favicon.ico").permitAll()
                 // Public customer print, applications catalogue, and tracking endpoints
-                .requestMatchers("/", "/applications/**", "/print/**", "/kiosk/**", "/order/**", "/api/**", "/error/**").permitAll()
+                .requestMatchers("/", "/health", "/ping", "/applications/**", "/print/**", "/kiosk/**", "/order/**", "/api/**", "/error/**").permitAll()
                 // Admin login page public
                 .requestMatchers("/admin/login").permitAll()
                 // All other /admin/** paths require ADMIN role
