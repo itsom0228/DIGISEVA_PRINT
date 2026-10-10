@@ -142,6 +142,13 @@ public class KioskService {
             return kioskRepository.save(kiosk);
         } else {
             Kiosk existing = getKioskByEntityId(kiosk.getId());
+            if (kiosk.getKioskId() != null && !kiosk.getKioskId().trim().isEmpty() && !existing.getKioskId().equalsIgnoreCase(kiosk.getKioskId().trim())) {
+                String newKioskId = kiosk.getKioskId().trim();
+                if (kioskRepository.existsByKioskId(newKioskId)) {
+                    throw new IllegalArgumentException("A machine with ID '" + newKioskId + "' already exists.");
+                }
+                existing.setKioskId(newKioskId);
+            }
             existing.setName(kiosk.getName());
             existing.setLocation(kiosk.getLocation());
             existing.setCity(kiosk.getCity());

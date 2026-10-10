@@ -119,10 +119,25 @@ public class AdminController {
 
     @GetMapping("/kiosks")
     public String manageKiosks(Model model) {
-        model.addAttribute("kiosks", kioskService.getAllKiosks());
+        java.util.List<Kiosk> kiosks = kioskService.getAllKiosks();
+        model.addAttribute("kiosks", kiosks);
         model.addAttribute("baseUrl", qrCodeService.getBaseUrl());
         model.addAttribute("categories", officeCategoryRepository.findAllByActiveTrueOrderByDisplayOrderAsc());
         model.addAttribute("newKiosk", new Kiosk());
+
+        java.util.Map<String, String> qrCodeBase64Map = new java.util.HashMap<>();
+        java.util.Map<String, String> kioskUrlMap = new java.util.HashMap<>();
+        for (Kiosk k : kiosks) {
+            try {
+                qrCodeBase64Map.put(k.getKioskId(), qrCodeService.generateKioskQrCodeBase64(k.getKioskId()));
+                kioskUrlMap.put(k.getKioskId(), qrCodeService.getKioskUrl(k.getKioskId()));
+            } catch (Exception e) {
+                qrCodeBase64Map.put(k.getKioskId(), "");
+                kioskUrlMap.put(k.getKioskId(), "");
+            }
+        }
+        model.addAttribute("qrCodeBase64Map", qrCodeBase64Map);
+        model.addAttribute("kioskUrlMap", kioskUrlMap);
         return "admin/kiosks";
     }
 
