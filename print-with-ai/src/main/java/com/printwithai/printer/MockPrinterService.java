@@ -143,13 +143,20 @@ public class MockPrinterService implements PrinterService {
                 log.warn("[HARDWARE PRINT] Error looking up print services: {}", t.getMessage());
             }
 
+            if (availableServices != null) {
+                log.info("[AUTOMATIC HARDWARE PRINT] Discovered {} OS printers. Searching for physical/default printer...", availableServices.length);
+                for (PrintService ps : availableServices) {
+                    log.info("   -> OS Printer: '{}'", ps.getName());
+                }
+            }
+
             // 1. Check configured printer name
             if (configuredPrinterName != null && !configuredPrinterName.isBlank() && availableServices != null) {
                 for (PrintService ps : availableServices) {
                     if (ps.getName().equalsIgnoreCase(configuredPrinterName) ||
                         ps.getName().toLowerCase().contains(configuredPrinterName.toLowerCase())) {
                         targetPrinter = ps;
-                        log.info("[HARDWARE PRINT] Found configured printer: '{}'", ps.getName());
+                        log.info("[AUTOMATIC HARDWARE PRINT] Selected user-configured printer: '{}'", ps.getName());
                         break;
                     }
                 }
@@ -161,7 +168,7 @@ public class MockPrinterService implements PrinterService {
                     String name = ps.getName().toLowerCase();
                     if (!name.contains("onenote") && !name.contains("fax") && !name.contains("xps") && !name.contains("pdf")) {
                         targetPrinter = ps;
-                        log.info("[HARDWARE PRINT] Auto-detected physical hardware printer: '{}'", ps.getName());
+                        log.info("[AUTOMATIC HARDWARE PRINT] Auto-detected physical hardware printer: '{}'", ps.getName());
                         break;
                     }
                 }
@@ -171,6 +178,9 @@ public class MockPrinterService implements PrinterService {
             if (targetPrinter == null) {
                 try {
                     targetPrinter = PrintServiceLookup.lookupDefaultPrintService();
+                    if (targetPrinter != null) {
+                        log.info("[AUTOMATIC HARDWARE PRINT] Using Windows OS Default printer: '{}'", targetPrinter.getName());
+                    }
                 } catch (Throwable ignored) {}
             }
 
@@ -180,7 +190,7 @@ public class MockPrinterService implements PrinterService {
             }
 
             if (targetPrinter != null) {
-                log.info("[HARDWARE PRINT] Selected printer: '{}'. Spooling job {}...",
+                log.info("[AUTOMATIC HARDWARE PRINT] Selected target printer: '{}'. Automatically spooling job {}...",
                         targetPrinter.getName(), job.getPublicReference());
 
                 PrinterJob printerJob = PrinterJob.getPrinterJob();
@@ -192,15 +202,15 @@ public class MockPrinterService implements PrinterService {
                 javax.print.attribute.PrintRequestAttributeSet attributes = new javax.print.attribute.HashPrintRequestAttributeSet();
                 attributes.add(new javax.print.attribute.standard.Copies(copies));
 
-                // If printer is a virtual PDF printer, supply Destination so it completes without GUI prompt
-                if (targetPrinter.getName().toLowerCase().contains("pdf")) {
+                // If printer is a virtual PDF printer and no physical printer name was set, supply Destination
+                if (targetPrinter.getName().toLowerCase().contains("pdf") && (configuredPrinterName == null || configuredPrinterName.isBlank())) {
                     File spoolDir = new File(file.getParentFile(), "spool_prints");
                     if (!spoolDir.exists()) {
                         spoolDir.mkdirs();
                     }
                     File spoolFile = new File(spoolDir, "PRINTED_" + job.getPublicReference() + "_" + file.getName());
                     attributes.add(new javax.print.attribute.standard.Destination(spoolFile.toURI()));
-                    log.info("[HARDWARE PRINT] Virtual PDF spool configured to: {}", spoolFile.getAbsolutePath());
+                    log.info("[AUTOMATIC HARDWARE PRINT] Virtual PDF spool configured to: {}", spoolFile.getAbsolutePath());
                 }
 
                 String lowerName = job.getStoredFilename().toLowerCase();

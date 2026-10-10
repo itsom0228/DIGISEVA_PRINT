@@ -119,11 +119,4 @@ public class PrintOrderController {
                 .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + filename + "\"")
                 .body(resource);
     }
-
-    @GetMapping("/view/{trackingToken}")
-    public String showPrintView(@PathVariable("trackingToken") String trackingToken, org.springframework.ui.Model model) {
-        PrintJob job = printJobService.getOrderByTrackingToken(trackingToken);
-        model.addAttribute("job", job);
-        return "order/print-view";
-    }
 }

@@ -3,16 +3,45 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Confirmation & Printing Status — DIGISEVA PRINT</title>
+    <title>ऑर्डर पुष्टीकरण व प्रिंट स्थिती &bull; Order Confirmation — DIGISEVA PRINT</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link th:href="@{/css/style.css}" rel="stylesheet">
+    <style>
+        .lang-switch-pill {
+            font-size: 0.8rem;
+            font-weight: 600;
+            padding: 0.25rem 0.65rem;
+            border-radius: 2rem;
+            text-decoration: none;
+            transition: all 0.2s ease;
+        }
+        .lang-switch-pill.active {
+            background-color: #2563eb;
+            color: #fff;
+        }
+        .lang-switch-pill:not(.active) {
+            background-color: #f1f5f9;
+            color: #475569;
+        }
+        .lang-switch-pill:hover:not(.active) {
+            background-color: #e2e8f0;
+        }
+        .pulse-printer {
+            animation: pulse-ring 2s infinite cubic-bezier(0.4, 0, 0.6, 1);
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0.5); }
+            70% { transform: scale(1.02); box-shadow: 0 0 0 15px rgba(37, 99, 235, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(37, 99, 235, 0); }
+        }
+    </style>
 </head>
 <body>
 
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
-    <div class="container py-5">
+    <div class="container py-4 py-md-5">
         <div class="row justify-content-center">
             <div class="col-lg-8">
 
@@ -23,95 +52,120 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
 
-                <!-- Hidden Iframe to stream and print the actual PDF document -->
-                <iframe id="docPrintFrame" th:src="@{/print/document/{token}(token=${job.trackingToken})}" style="position:absolute;width:0;height:0;border:0;visibility:hidden;" title="Print Document Frame"></iframe>
-
-                <!-- Confirmation Card -->
+                <!-- Main Confirmation Card -->
                 <div class="glass-card p-4 p-md-5 text-center mb-4">
-                    <div class="d-inline-flex p-3 rounded-circle bg-success-subtle text-success mb-3">
-                        <i class="bi bi-printer-fill display-4"></i>
-                    </div>
-                    <h2 class="fw-bold mb-1">Print Job Submitted!</h2>
-                    <p class="text-secondary mb-3">डॉक्युमेंट प्रिंटरवर पाठवले गेले आहे. लॅपटॉपला प्रिंटर कनेक्ट असल्यास प्रिंट लगेच निघेल.</p>
-
-                    <!-- CONNECTED PRINTER STATUS BADGE -->
-                    <div class="badge bg-success-subtle text-success border border-success-subtle p-2 px-3 mb-4 d-inline-block rounded-pill">
-                        <i class="bi bi-check-circle-fill text-success me-1"></i>
-                        लॅपटॉप प्रिंटर कनेक्टेड &bull; ऑटोमॅटिक प्रिंट सक्रिय
-                    </div>
-
-                    <!-- Direct Instant Print Trigger Button -->
-                    <div class="p-3 bg-light rounded-4 border mb-4 shadow-sm">
-                        <button type="button" class="btn btn-primary-custom btn-lg shadow px-4 py-3 fw-bold w-100" id="btnPrintNow" onclick="triggerBrowserPrint()">
-                            <i class="bi bi-printer-fill fs-5 me-2"></i> त्वरित प्रिंट करा / Print Document (Ctrl + P)
-                        </button>
-                        <div class="mt-2 text-muted small">
-                            <i class="bi bi-keyboard me-1"></i> तुम्ही कीबोर्डवर <strong>Ctrl + P</strong> दाबूनही थेट प्रिंट करू शकता
+                    
+                    <!-- Top Language Switcher Bar -->
+                    <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
+                        <div class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill">
+                            <i class="bi bi-shield-check text-success me-1"></i> पेमेंट सत्यापित / Payment Verified
+                        </div>
+                        <div class="d-flex align-items-center gap-1">
+                            <span class="small text-muted me-1"><i class="bi bi-translate"></i> भाषा / Language:</span>
+                            <a th:href="@{''(lang='mr')}" class="lang-switch-pill" th:classappend="${#locale.language == 'mr' ? 'active' : ''}">मराठी</a>
+                            <a th:href="@{''(lang='hi')}" class="lang-switch-pill" th:classappend="${#locale.language == 'hi' ? 'active' : ''}">हिंदी</a>
+                            <a th:href="@{''(lang='en')}" class="lang-switch-pill" th:classappend="${#locale.language == 'en' ? 'active' : ''}">English</a>
                         </div>
                     </div>
 
-                    <!-- Live Progress Stage -->
-                    <div class="p-4 bg-light rounded-3 border mb-4 text-start">
+                    <!-- Animated Printer Icon -->
+                    <div class="d-inline-flex p-3 rounded-circle bg-primary-subtle text-primary mb-3 pulse-printer">
+                        <i class="bi bi-printer-fill display-3"></i>
+                    </div>
+
+                    <!-- Trilingual Headings -->
+                    <h2 class="fw-bold mb-1 text-slate-900" id="mainHeaderMr">पेमेंट यशस्वी! स्वयंचलित प्रिंट सुरू आहे</h2>
+                    <h5 class="fw-semibold text-primary mb-1" id="mainHeaderHi">भुगतान सफल! स्वचालित प्रिंटिंग प्रगति पर है</h5>
+                    <p class="text-secondary mb-3 small" id="mainHeaderEn">Payment Successful! Document is printing automatically in the background on your connected printer.</p>
+
+                    <!-- Background Automatic Hardware Spooler Badge -->
+                    <div class="badge bg-success-subtle text-success border border-success-subtle p-2 px-3 mb-4 d-inline-block rounded-pill shadow-sm">
+                        <i class="bi bi-check-circle-fill text-success me-1"></i>
+                        <span>पार्श्वभूमीत थेट प्रिंटरवर स्पूल होत आहे &bull; Automatic Background Print Active</span>
+                    </div>
+
+                    <!-- Live Hardware Spooling Progress Stage -->
+                    <div class="p-4 bg-light rounded-4 border mb-4 text-start shadow-sm">
                         <div class="d-flex justify-content-between align-items-center mb-2">
-                            <span class="fw-bold text-slate-800" id="liveStatusText" th:text="${job.jobStatus.displayName}">Printing in Progress</span>
+                            <span class="fw-bold text-slate-800 fs-5" id="liveStatusText" th:text="${job.jobStatus.displayName}">Printing in Progress</span>
                             <span class="badge badge-status" th:classappend="'badge-status-' + ${job.jobStatus.name()}" id="liveStatusBadge" th:text="${job.jobStatus.name()}">PRINTING</span>
                         </div>
-                        <div class="progress mb-2" style="height: 10px;">
-                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="liveProgressBar" role="progressbar" style="width: 60%;"></div>
+                        
+                        <div class="progress mb-3" style="height: 12px; border-radius: 6px;">
+                            <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="liveProgressBar" role="progressbar" style="width: 70%;"></div>
                         </div>
-                        <div class="small text-muted" id="liveStatusDesc">Hardware spooler active. Sending to connected printer...</div>
-                    </div>
 
-                    <!-- Order Details Summary Grid -->
-                    <div class="row g-3 text-start small mb-4">
-                        <div class="col-sm-6">
-                            <div class="p-3 bg-white rounded border">
-                                <span class="text-muted">Order Reference:</span>
-                                <div class="fw-bold text-primary fs-6" th:text="${job.publicReference}">PAI-2026-XXXX</div>
-                            </div>
+                        <!-- Trilingual Status Description -->
+                        <div class="small fw-semibold text-primary" id="liveStatusDescMr">
+                            <i class="bi bi-gear-wide-connected me-1"></i> प्रिंटर सक्रिय: कागद स्वयंचलितपणे ट्रेमधून प्रिंट होत आहे...
                         </div>
-                        <div class="col-sm-6">
-                            <div class="p-3 bg-white rounded border">
-                                <span class="text-muted">Tracking Token:</span>
-                                <div class="fw-bold text-dark fs-6" th:text="${job.trackingToken}">TRK-XXXX-XXXX</div>
-                            </div>
+                        <div class="small text-secondary" id="liveStatusDescHi">
+                            प्रिंटर सक्रिय है: दस्तावेज़ स्वचालित रूप से प्रिंट हो रहा है...
                         </div>
-                        <div class="col-sm-6">
-                            <div class="p-3 bg-white rounded border">
-                                <span class="text-muted">Kiosk Location:</span>
-                                <div class="fw-bold" th:text="${job.kioskName}">Tahsil Demonstration Kiosk</div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="p-3 bg-white rounded border">
-                                <span class="text-muted">Document:</span>
-                                <div class="fw-bold" th:text="${job.originalFilename}">Doc.pdf</div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="p-3 bg-white rounded border">
-                                <span class="text-muted">Paid Amount:</span>
-                                <div class="fw-bold text-success fs-6" th:text="'₹' + ${job.totalAmount}">₹10.00</div>
-                            </div>
-                        </div>
-                        <div class="col-sm-6">
-                            <div class="p-3 bg-white rounded border">
-                                <span class="text-muted">Print Mode:</span>
-                                <div class="fw-bold" th:text="${job.printType.displayName} + ' (' + ${job.copies} + ' copies)'">Black & White (1 copy)</div>
-                            </div>
+                        <div class="small text-muted" id="liveStatusDescEn">
+                            Hardware spooler active. Output document dispatched to printer tray.
                         </div>
                     </div>
 
-                    <!-- Action Buttons -->
-                    <div class="d-flex flex-wrap justify-content-center gap-3">
-                        <a th:href="@{/print/document/{token}(token=${job.trackingToken})}" target="_blank" class="btn btn-outline-secondary">
-                            <i class="bi bi-file-earmark-pdf me-1"></i> डॉक्युमेंट उघडा / View PDF
+                    <!-- Trilingual Order Details Summary Grid -->
+                    <div class="text-start mb-4">
+                        <h6 class="fw-bold text-slate-800 mb-3 border-bottom pb-2">
+                            <i class="bi bi-receipt-cutoff text-primary me-1"></i> 
+                            ऑर्डर तपशील / ऑर्डर विवरण / Order Details
+                        </h6>
+                        <div class="row g-3 small">
+                            <div class="col-sm-6">
+                                <div class="p-3 bg-white rounded-3 border">
+                                    <span class="text-muted d-block">ऑर्डर संदर्भ / Order Reference:</span>
+                                    <div class="fw-bold text-primary fs-6" th:text="${job.publicReference}">PAI-2026-XXXX</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 bg-white rounded-3 border">
+                                    <span class="text-muted d-block">ट्रॅकिंग टोकन / Tracking Token:</span>
+                                    <div class="fw-bold text-dark fs-6" th:text="${job.trackingToken}">TRK-XXXX-XXXX</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 bg-white rounded-3 border">
+                                    <span class="text-muted d-block">किओस्क स्थान / Kiosk Location:</span>
+                                    <div class="fw-bold" th:text="${job.kioskName}">Tahsil Demonstration Kiosk</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 bg-white rounded-3 border">
+                                    <span class="text-muted d-block">दस्तावेज / Document:</span>
+                                    <div class="fw-bold text-truncate" th:text="${job.originalFilename}">Doc.pdf</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 bg-white rounded-3 border">
+                                    <span class="text-muted d-block">पेमेंट रक्कम / Paid Amount:</span>
+                                    <div class="fw-bold text-success fs-6" th:text="'₹' + ${job.totalAmount}">₹10.00</div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 bg-white rounded-3 border">
+                                    <span class="text-muted d-block">प्रिंट प्रकार व प्रती / Mode & Copies:</span>
+                                    <div class="fw-bold" th:text="${job.printType.displayName} + ' (' + ${job.copies} + ' copy)'">Black & White (1 copy)</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Action Navigation Buttons (NO Ctrl+P, only clean order navigation) -->
+                    <div class="d-flex flex-wrap justify-content-center gap-3 pt-2">
+                        <a th:href="@{/order/track/{token}(token=${job.trackingToken})}" class="btn btn-primary-custom px-4 py-2">
+                            <i class="bi bi-geo-alt me-1"></i> 
+                            <span>ऑर्डर स्थिती ट्रॅक करा / Track Order</span>
                         </a>
-                        <a th:href="@{/order/track/{token}(token=${job.trackingToken})}" class="btn btn-primary-custom">
-                            <i class="bi bi-geo-alt me-1"></i> Open Order Tracking Page
+                        <a th:href="@{/print/document/{token}(token=${job.trackingToken})}" target="_blank" class="btn btn-outline-secondary px-4 py-2">
+                            <i class="bi bi-file-earmark-pdf me-1"></i> 
+                            <span>अपलोड केलेला PDF पहा / View PDF</span>
                         </a>
-                        <a th:href="@{/print/new(kioskId=${job.kioskId})}" class="btn btn-secondary-custom">
-                            <i class="bi bi-plus-circle me-1"></i> Print Another Document
+                        <a th:href="@{/print/new(kioskId=${job.kioskId})}" class="btn btn-secondary-custom px-4 py-2">
+                            <i class="bi bi-plus-circle me-1"></i> 
+                            <span>नवीन प्रिंट करा / Print Another</span>
                         </a>
                     </div>
                 </div>
@@ -128,34 +182,9 @@
         const liveStatusText = document.getElementById('liveStatusText');
         const liveStatusBadge = document.getElementById('liveStatusBadge');
         const liveProgressBar = document.getElementById('liveProgressBar');
-        const liveStatusDesc = document.getElementById('liveStatusDesc');
-
-        let autoPrintAttempted = false;
-
-        function triggerBrowserPrint() {
-            window.open('/print/view/' + trackingToken, '_blank');
-        }
-
-        // Ctrl + P Keyboard Shortcut
-        window.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
-                e.preventDefault();
-                triggerBrowserPrint();
-            }
-        });
-
-        // Trigger automatic print dialog when iframe finishes loading
-        const docPrintFrame = document.getElementById('docPrintFrame');
-        if (docPrintFrame) {
-            docPrintFrame.onload = function() {
-                if (!autoPrintAttempted) {
-                    autoPrintAttempted = true;
-                    setTimeout(() => {
-                        triggerBrowserPrint();
-                    }, 800);
-                }
-            };
-        }
+        const liveStatusDescMr = document.getElementById('liveStatusDescMr');
+        const liveStatusDescHi = document.getElementById('liveStatusDescHi');
+        const liveStatusDescEn = document.getElementById('liveStatusDescEn');
 
         let intervalId = setInterval(checkStatus, 1500);
 
@@ -169,25 +198,32 @@
                     liveStatusBadge.className = 'badge badge-status badge-status-' + data.jobStatus;
 
                     if (data.jobStatus === 'QUEUED') {
-                        liveProgressBar.style.width = '40%';
-                        liveStatusDesc.textContent = 'Document placed in printer buffer queue...';
+                        liveProgressBar.style.width = '45%';
+                        liveStatusDescMr.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> दस्तऐवज प्रिंटरच्या बफरमध्ये ठेवला आहे...';
+                        liveStatusDescHi.textContent = 'दस्तावेज़ प्रिंटर कतार में है...';
+                        liveStatusDescEn.textContent = 'Document placed in printer spool queue...';
                     } else if (data.jobStatus === 'PRINTING') {
-                        liveProgressBar.style.width = '75%';
-                        liveStatusDesc.textContent = 'Printer active: printing pages in progress...';
+                        liveProgressBar.style.width = '80%';
+                        liveStatusDescMr.innerHTML = '<i class="bi bi-printer me-1"></i> प्रिंटर सक्रिय: कागद प्रत्यक्ष प्रिंट होत आहे...';
+                        liveStatusDescHi.textContent = 'प्रिंटर सक्रिय है: दस्तावेज़ प्रिंट हो रहा है...';
+                        liveStatusDescEn.textContent = 'Printer active: pages printing in progress...';
                     } else if (data.jobStatus === 'COMPLETED') {
                         liveProgressBar.style.width = '100%';
                         liveProgressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
                         liveProgressBar.classList.add('bg-success');
-                        liveStatusDesc.textContent = 'Done! Document printed successfully.';
+                        liveStatusDescMr.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i> प्रिंट पूर्ण झाले! कृपया प्रिंटर ट्रेमधून दस्तऐवज गोळा करा.';
+                        liveStatusDescHi.textContent = 'प्रिंटिंग पूरी हुई! कृपया प्रिंटर ट्रे से दस्तावेज़ प्राप्त करें।';
+                        liveStatusDescEn.textContent = 'Done! Document printed successfully. Ready in pickup tray.';
                         clearInterval(intervalId);
                     } else if (data.jobStatus === 'FAILED' || data.jobStatus === 'CANCELLED') {
                         liveProgressBar.style.width = '100%';
                         liveProgressBar.classList.add('bg-danger');
+                        liveStatusDescMr.textContent = 'प्रिंटिंगमध्ये त्रुटी: ' + (data.failureReason || 'Failed');
                         clearInterval(intervalId);
                     }
                 }
             } catch (e) {
-                console.warn('Polling error:', e);
+                console.warn('Status poll error:', e);
             }
         }
     </script>

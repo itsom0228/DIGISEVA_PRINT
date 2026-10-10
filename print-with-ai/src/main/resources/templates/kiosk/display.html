@@ -261,19 +261,14 @@
                             <div class="p-4 bg-primary bg-opacity-25 rounded-circle d-inline-block mb-3 text-primary printing-roller-anim">
                                 <i class="bi bi-printer-fill display-3"></i>
                             </div>
-                            <h2 class="display-6 fw-bold text-white mb-1" id="printStageTitle">Printing in Progress</h2>
-                            <p class="lead text-info mb-4" id="printStageDesc">Spooler active. Simulating paper output delivery...</p>
+                            <h2 class="display-6 fw-bold text-white mb-1" id="printStageTitle">प्रिंटिंग सुरू आहे / Printing in Progress</h2>
+                            <p class="lead text-info mb-4" id="printStageDesc">हार्डवेअर प्रिंटर सक्रिय आहे. कागद ट्रेमधून बाहेर पडत आहे... (Printing on hardware printer...)</p>
                             
                             <!-- Large Animated Progress Bar -->
                             <div class="progress mx-auto mb-3" style="height: 18px; max-width: 550px; background: rgba(255, 255, 255, 0.1);">
                                 <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="kioskProgressBar" role="progressbar" style="width: 75%;"></div>
                             </div>
-                            <div class="small text-white-50 mb-3">Hardware Spooler Active &bull; Sending to connected printer</div>
-                            <div>
-                                <button type="button" class="btn btn-warning fw-bold px-4 py-2 shadow" onclick="triggerKioskBrowserPrint()">
-                                    <i class="bi bi-printer-fill me-2"></i> त्वरित प्रिंट करा / Print Now (Ctrl + P)
-                                </button>
-                            </div>
+                            <div class="small text-white-50">स्वयंचलित हार्डवेअर स्पूलर &bull; Automatic Background Spooling to Printer</div>
                         </div>
 
                         <!-- 6. COMPLETED STATE -->
@@ -281,21 +276,18 @@
                             <div class="p-4 bg-success bg-opacity-25 rounded-circle d-inline-block mb-3 text-success">
                                 <i class="bi bi-check-circle-fill display-2"></i>
                             </div>
-                            <h2 class="display-5 fw-bold text-success mb-2">Printing Completed!</h2>
+                            <h2 class="display-5 fw-bold text-success mb-2">प्रिंटिंग यशस्वीरीत्या पूर्ण!</h2>
                             <p class="lead text-white mb-3" id="completedDesc">
-                                Your printed document is ready in the printer tray.
+                                कृपया प्रिंटर ट्रेमधून दस्तऐवज घ्या. / Document ready in printer pickup tray.
                             </p>
                             <div class="p-3 rounded-3 d-inline-block text-start mb-4" style="background: rgba(255, 255, 255, 0.08); min-width: 300px;">
-                                <div class="small text-white-50">Order Reference: <strong class="text-white" id="compRef">PAI-2026-XXXX</strong></div>
-                                <div class="small text-white-50">Document: <strong class="text-white" id="compDoc">Form.pdf</strong></div>
-                                <div class="small text-white-50">Status: <span class="badge bg-success">SUCCESS</span></div>
+                                <div class="small text-white-50">ऑर्डर संदर्भ / Ref: <strong class="text-white" id="compRef">PAI-2026-XXXX</strong></div>
+                                <div class="small text-white-50">दस्तावेज / Doc: <strong class="text-white" id="compDoc">Form.pdf</strong></div>
+                                <div class="small text-white-50">स्थिती / Status: <span class="badge bg-success">SUCCESS</span></div>
                             </div>
                             <div class="d-flex justify-content-center gap-3">
-                                <button type="button" class="btn btn-warning fw-bold px-4" onclick="triggerKioskBrowserPrint()">
-                                    <i class="bi bi-printer-fill me-1"></i> री-प्रिंट करा / Print (Ctrl + P)
-                                </button>
                                 <button class="btn btn-primary-custom px-4" id="btnNextCustomer">
-                                    <i class="bi bi-arrow-clockwise me-1"></i> Next Customer / Ready
+                                    <i class="bi bi-arrow-clockwise me-1"></i> पुढील ग्राहक / Next Customer
                                 </button>
                             </div>
                         </div>
@@ -414,49 +406,11 @@
         let lastPrintedToken = null;
         let currentOrderToken = null;
 
-        function triggerKioskBrowserPrint() {
-            const frame = document.getElementById('kioskPrintFrame');
-            if (frame && frame.contentWindow && frame.src && !frame.src.endsWith('/display')) {
-                try {
-                    frame.contentWindow.focus();
-                    frame.contentWindow.print();
-                    return;
-                } catch(e) {
-                    console.warn("Iframe print error:", e);
-                }
-            }
-            if (currentOrderToken) {
-                window.open('/print/view/' + currentOrderToken, '_blank');
-            }
-        }
-
-        // Global Ctrl + P Keyboard Shortcut for the Kiosk screen
-        window.addEventListener('keydown', function(e) {
-            if ((e.ctrlKey || e.metaKey) && (e.key === 'p' || e.key === 'P')) {
-                e.preventDefault();
-                triggerKioskBrowserPrint();
-            }
-        });
-
         function renderKioskStage(data) {
             stageBadge.textContent = data.stage;
 
             if (data.trackingToken) {
                 currentOrderToken = data.trackingToken;
-            }
-
-            // Auto-trigger printing when order enters PRINTING or COMPLETED stage
-            if ((data.stage === 'PRINTING' || data.stage === 'COMPLETED') && data.trackingToken && lastPrintedToken !== data.trackingToken) {
-                lastPrintedToken = data.trackingToken;
-                const frame = document.getElementById('kioskPrintFrame');
-                if (frame) {
-                    frame.src = '/print/document/' + data.trackingToken;
-                    frame.onload = function() {
-                        setTimeout(() => {
-                            triggerKioskBrowserPrint();
-                        }, 700);
-                    };
-                }
             }
 
             hideAllStates();
