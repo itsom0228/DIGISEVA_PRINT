@@ -49,7 +49,22 @@ public class MockPrinterService implements PrinterService {
 
     @Override
     public void submitJob(PrintJob job) {
-        log.info("[PRINT DISPATCH] Received print job {}. Preparing spooling...", job.getPublicReference());
+        if (job == null || job.getPaymentStatus() != com.printwithai.enums.PaymentStatus.DEMO_SUCCESS) {
+            String ref = (job != null) ? job.getPublicReference() : "UNKNOWN";
+            String pStatus = (job != null && job.getPaymentStatus() != null) ? job.getPaymentStatus().name() : "NULL";
+            log.error("[PRINT SECURITY ABORT] Job {} rejected: Cannot print without confirmed payment (Status: {}).", ref, pStatus);
+            if (job != null) {
+                kioskLogRepository.save(new KioskLog(
+                        job.getKioskId(),
+                        job.getPublicReference(),
+                        "PRINT_REJECTED_UNPAID",
+                        "Print rejected: Payment has not been verified for order " + ref
+                ));
+            }
+            return;
+        }
+
+        log.info("[PRINT DISPATCH] Verified payment confirmed for job {}. Preparing spooling...", job.getPublicReference());
 
         // Step 1: Set to QUEUED
         job.setJobStatus(PrintJobStatus.QUEUED);

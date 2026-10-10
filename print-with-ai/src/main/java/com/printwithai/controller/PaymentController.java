@@ -19,10 +19,10 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final QrCodeService qrCodeService;
 
-    @org.springframework.beans.factory.annotation.Value("${app.payment.upi.vpa:digisevaprint@upi}")
+    @org.springframework.beans.factory.annotation.Value("${app.payment.upi.vpa:7820939263@ptyes}")
     private String upiVpa;
 
-    @org.springframework.beans.factory.annotation.Value("${app.payment.upi.payee-name:DigiSeva Print}")
+    @org.springframework.beans.factory.annotation.Value("${app.payment.upi.payee-name:Omkar Vilas Sarpane}")
     private String upiPayeeName;
 
     public PaymentController(PrintJobService printJobService, PaymentService paymentService, QrCodeService qrCodeService) {

@@ -171,45 +171,89 @@
 
                     <form th:action="@{/print/payment/{token}(token=${job.trackingToken})}" method="post" id="paymentForm">
                         
-                        <!-- TAB 1: UPI DIRECT APPS & SCANNER (Primary) -->
+                        <!-- UPI PAYMENT GATEWAY (PhonePe / GPay / Paytm / BHIM) -->
+                        <input type="hidden" name="paymentMode" value="DEMO_UPI">
+
                         <div class="card p-4 border-2 border-primary shadow-sm mb-4" style="background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);">
                             
                             <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
-                                <div class="form-check m-0">
-                                    <input class="form-check-input" type="radio" name="paymentMode" id="modeUpi" value="DEMO_UPI" checked>
-                                    <label class="form-check-label fw-bold text-dark fs-5" for="modeUpi">
-                                        <i class="bi bi-qr-code-scan text-primary me-1"></i> <span th:text="#{payment.upi_heading}">त्वरित UPI पेमेंट (PhonePe / GPay / Paytm)</span>
-                                    </label>
+                                <div class="d-flex align-items-center gap-2">
+                                    <i class="bi bi-qr-code-scan text-primary fs-4"></i>
+                                    <div>
+                                        <h5 class="fw-bold text-dark mb-0">UPI पेमेंट (PhonePe / GPay / Paytm / BHIM)</h5>
+                                        <div class="small text-muted">स्कॅन करून किंवा थेट ॲपवरून ₹<span th:text="${job.totalAmount}"></span> भरा</div>
+                                    </div>
                                 </div>
                                 <div class="d-flex gap-1 flex-wrap">
                                     <span class="app-badge-pill bg-purple text-white" style="background:#5f259f;"><i class="bi bi-phone"></i> PhonePe</span>
                                     <span class="app-badge-pill bg-white text-dark border"><i class="bi bi-google text-primary"></i> GPay</span>
                                     <span class="app-badge-pill text-white" style="background:#00b9f5;"><i class="bi bi-wallet2"></i> Paytm</span>
+                                    <span class="app-badge-pill bg-success text-white"><i class="bi bi-shield-check"></i> 100% Safe</span>
                                 </div>
                             </div>
 
                             <div class="row g-4 align-items-center">
                                 
-                                <!-- LEFT: Dynamic UPI QR Code (For Laptop/Desktop or Secondary Phone Scan) -->
+                                <!-- LEFT: Paytm Merchant Card & Auto Amount QR -->
                                 <div class="col-md-5 text-center">
-                                    <div class="qr-wrapper mt-2">
-                                        <div class="qr-badge-ribbon">AUTO-AMOUNT QR</div>
-                                        <img th:src="'data:image/png;base64,' + ${upiQrBase64}" 
-                                             alt="PhonePe GPay Paytm UPI QR" 
-                                             class="img-fluid rounded"
-                                             style="width: 210px; height: 210px; object-fit: contain;">
-                                        <div class="mt-2 fw-bold text-dark fs-6" th:text="#{payment.upi_scan_hint} + ' (₹' + ${job.totalAmount} + ')'">स्कॅन करा आणि भरा</div>
+                                    <div class="mb-2">
+                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill small fw-bold">
+                                            <i class="bi bi-patch-check-fill text-primary me-1"></i> <span th:text="${upiPayeeName}">Omkar Vilas Sarpane</span>
+                                        </span>
                                     </div>
 
+                                    <!-- Switchable View: Official Paytm QR Card or Auto-Bill QR -->
+                                    <ul class="nav nav-pills nav-fill mb-2 p-1 bg-light rounded-pill border" id="qrTabs" role="tablist">
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link active py-1 px-2 rounded-pill small fw-bold" id="auto-qr-tab" data-bs-toggle="tab" data-bs-target="#auto-qr-pane" type="button" role="tab">
+                                                <i class="bi bi-qr-code me-1"></i> Auto-Bill QR
+                                            </button>
+                                        </li>
+                                        <li class="nav-item" role="presentation">
+                                            <button class="nav-link py-1 px-2 rounded-pill small fw-bold" id="paytm-card-tab" data-bs-toggle="tab" data-bs-target="#paytm-card-pane" type="button" role="tab">
+                                                <i class="bi bi-wallet2 me-1"></i> Paytm Card
+                                            </button>
+                                        </li>
+                                    </ul>
+
+                                    <div class="tab-content" id="qrTabsContent">
+                                        <!-- Tab 1: Live Dynamic QR (Exact order amount pre-filled) -->
+                                        <div class="tab-pane fade show active" id="auto-qr-pane" role="tabpanel">
+                                            <div class="qr-wrapper mt-1">
+                                                <div class="qr-badge-ribbon">AUTO-AMOUNT QR (₹<span th:text="${job.totalAmount}">10.00</span>)</div>
+                                                <img th:src="'data:image/png;base64,' + ${upiQrBase64}" 
+                                                     alt="Paytm PhonePe GPay UPI QR" 
+                                                     class="img-fluid rounded"
+                                                     style="width: 210px; height: 210px; object-fit: contain;">
+                                                <div class="mt-2 fw-bold text-dark fs-6">
+                                                    ₹<span th:text="${job.totalAmount}"></span> स्कॅन करा आणि भरा
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Tab 2: User's Official Paytm Merchant QR Card -->
+                                        <div class="tab-pane fade" id="paytm-card-pane" role="tabpanel">
+                                            <div class="p-2 bg-white rounded-3 border shadow-sm d-inline-block mt-1">
+                                                <img th:src="@{/images/omkar_paytm_qr_card.png}" 
+                                                     alt="Omkar Vilas Sarpane Paytm QR" 
+                                                     class="img-fluid rounded-3"
+                                                     style="max-width: 210px; height: auto;">
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <!-- Verified Payee & Copy UPI ID Button -->
                                     <div class="mt-3">
                                         <div class="input-group input-group-sm justify-content-center">
-                                            <span class="input-group-text bg-light text-muted small"><i class="bi bi-upc-scan me-1"></i> UPI ID:</span>
-                                            <input type="text" class="form-control form-control-sm text-center fw-semibold" id="upiVpaField" th:value="${upiVpa}" readonly style="max-width: 175px;">
-                                            <button class="btn btn-outline-secondary" type="button" onclick="copyUpiId()" title="Copy UPI ID">
+                                            <span class="input-group-text bg-white text-dark small fw-bold"><i class="bi bi-wallet2 text-info me-1"></i> UPI ID:</span>
+                                            <input type="text" class="form-control form-control-sm text-center fw-bold text-primary font-monospace" id="upiVpaField" th:value="${upiVpa}" readonly style="max-width: 180px;">
+                                            <button class="btn btn-outline-primary" type="button" onclick="copyUpiId()" title="Copy UPI ID">
                                                 <i class="bi bi-clipboard" id="copyIcon"></i>
                                             </button>
                                         </div>
-                                        <div class="small text-muted mt-1" id="copyFeedback" th:text="#{payment.scan_camera_hint}">लॅपटॉपवरून मोबाईलच्या कॅमेऱ्याने QR स्कॅन करा</div>
+                                        <div class="small text-muted mt-1" id="copyFeedback">
+                                            <i class="bi bi-shield-check text-success me-1"></i><span class="fw-semibold text-dark" th:text="${upiPayeeName}">Omkar Vilas Sarpane</span> (<span th:text="${upiVpa}">7820939263@ptyes</span>)
+                                        </div>
                                     </div>
                                 </div>
 
@@ -224,6 +268,15 @@
 
                                     <div class="d-grid gap-2 mb-3">
                                         
+                                        <!-- Paytm Direct Intent (Primary) -->
+                                        <a th:href="${paytmPayload}" class="upi-app-btn btn-paytm">
+                                            <span class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-wallet-fill fs-5"></i>
+                                                <span>Paytm ने उघडा व भरा (Omkar Vilas Sarpane)</span>
+                                            </span>
+                                            <span class="badge bg-white text-primary px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹10.00</span>
+                                        </a>
+
                                         <!-- PhonePe Direct Intent -->
                                         <a th:href="${phonepePayload}" class="upi-app-btn btn-phonepe">
                                             <span class="d-flex align-items-center gap-2">
@@ -240,15 +293,6 @@
                                                 <span class="text-dark" th:text="#{payment.gpay_btn}">Google Pay (GPay) ने उघडा</span>
                                             </span>
                                             <span class="badge bg-primary text-white px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹10.00</span>
-                                        </a>
-
-                                        <!-- Paytm Direct Intent -->
-                                        <a th:href="${paytmPayload}" class="upi-app-btn btn-paytm">
-                                            <span class="d-flex align-items-center gap-2">
-                                                <i class="bi bi-wallet-fill fs-5"></i>
-                                                <span th:text="#{payment.paytm_btn}">Paytm ने उघडा व भरा</span>
-                                            </span>
-                                            <span class="badge bg-white text-primary px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹10.00</span>
                                         </a>
 
                                         <!-- Universal Any UPI Link -->
@@ -275,19 +319,6 @@
                                                th:value="'UPI-SUCCESS-' + ${job.publicReference}">
                                     </div>
 
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- TAB 2: CASH AT COUNTER (Secondary Option) -->
-                        <div class="card p-3 mb-4 border">
-                            <div class="form-check">
-                                <input class="form-check-input" type="radio" name="paymentMode" id="modeCash" value="DEMO_CASH">
-                                <label class="form-check-label fw-bold text-dark" for="modeCash" th:text="#{payment.cash_heading}">
-                                    कार्यालयीन काउंटरवर रोख रक्कम जमा करा (Cash at Counter)
-                                </label>
-                                <div class="small text-muted mt-1" th:text="#{payment.cash_desc}">
-                                    डिजिटल पेमेंट उपलब्ध नसल्यास ऑपरेटरकडे रोख रक्कम देऊन तत्काळ प्रिंट प्राप्त करा.
                                 </div>
                             </div>
                         </div>
