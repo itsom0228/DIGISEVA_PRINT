@@ -118,10 +118,20 @@ public class AdminController {
     }
 
     @GetMapping("/kiosks")
-    public String manageKiosks(Model model) {
+    public String manageKiosks(Model model, jakarta.servlet.http.HttpServletRequest request) {
         java.util.List<Kiosk> kiosks = kioskService.getAllKiosks();
         model.addAttribute("kiosks", kiosks);
-        model.addAttribute("baseUrl", qrCodeService.getBaseUrl());
+
+        String activeBaseUrl = qrCodeService.getBaseUrl();
+        if (request != null) {
+            String serverName = request.getServerName();
+            if (serverName != null && !serverName.equals("localhost") && !serverName.equals("127.0.0.1")) {
+                int port = request.getServerPort();
+                String scheme = request.getScheme();
+                activeBaseUrl = scheme + "://" + serverName + (port == 80 || port == 443 ? "" : ":" + port);
+            }
+        }
+        model.addAttribute("baseUrl", activeBaseUrl);
         model.addAttribute("categories", officeCategoryRepository.findAllByActiveTrueOrderByDisplayOrderAsc());
         model.addAttribute("newKiosk", new Kiosk());
 
@@ -129,8 +139,9 @@ public class AdminController {
         java.util.Map<String, String> kioskUrlMap = new java.util.HashMap<>();
         for (Kiosk k : kiosks) {
             try {
-                qrCodeBase64Map.put(k.getKioskId(), qrCodeService.generateKioskQrCodeBase64(k.getKioskId()));
-                kioskUrlMap.put(k.getKioskId(), qrCodeService.getKioskUrl(k.getKioskId()));
+                String targetUrl = activeBaseUrl + "/print/new?kioskId=" + k.getKioskId();
+                qrCodeBase64Map.put(k.getKioskId(), qrCodeService.generateQrCodeBase64(targetUrl, 350, 350));
+                kioskUrlMap.put(k.getKioskId(), targetUrl);
             } catch (Exception e) {
                 qrCodeBase64Map.put(k.getKioskId(), "");
                 kioskUrlMap.put(k.getKioskId(), "");

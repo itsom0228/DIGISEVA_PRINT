@@ -20,8 +20,15 @@ public class QrCodeService {
 
     private final String baseUrl;
 
-    public QrCodeService(@Value("${app.base-url:http://localhost:8080}") String baseUrl) {
-        this.baseUrl = baseUrl.endsWith("/") ? baseUrl.substring(0, baseUrl.length() - 1) : baseUrl;
+    public QrCodeService(@Value("${app.base-url:http://localhost:8085}") String baseUrl) {
+        String url = (baseUrl != null && !baseUrl.trim().isEmpty()) ? baseUrl.trim() : "http://localhost:8085";
+        if (url.endsWith("/")) {
+            url = url.substring(0, url.length() - 1);
+        }
+        if (!url.startsWith("http://") && !url.startsWith("https://")) {
+            url = "https://" + url;
+        }
+        this.baseUrl = url;
     }
 
     public String getKioskUrl(String kioskId) {
