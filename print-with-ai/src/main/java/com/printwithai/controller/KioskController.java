@@ -30,12 +30,36 @@ public class KioskController {
     public String kioskDisplay(@org.springframework.web.bind.annotation.RequestParam(value = "kioskId", defaultValue = "LAPTOP001") String kioskId,
                                jakarta.servlet.http.HttpServletRequest request,
                                Model model) {
+        if (kioskId == null || kioskId.trim().isEmpty()) {
+            kioskId = "LAPTOP001";
+        }
+        kioskId = kioskId.trim();
+
         if (!kioskService.isValidKiosk(kioskId)) {
-            // If LAPTOP001 not yet in db, re-seed or default to first
+            // If LAPTOP001 not yet in db, re-seed
             kioskService.seedInitialKiosks();
         }
 
-        Kiosk kiosk = kioskService.isValidKiosk(kioskId) ? kioskService.getKioskById(kioskId) : kioskService.getAllKiosks().get(0);
+        Kiosk kiosk = null;
+        if (kioskService.isValidKiosk(kioskId)) {
+            kiosk = kioskService.getKioskById(kioskId);
+        } else {
+            java.util.List<Kiosk> allKiosks = kioskService.getAllKiosks();
+            if (allKiosks != null && !allKiosks.isEmpty()) {
+                kiosk = allKiosks.get(0);
+            } else {
+                kiosk = kioskService.saveKiosk(new Kiosk(
+                        "LAPTOP001",
+                        "DigiSeva Laptop Display Terminal",
+                        "Citizen Self-Service Screen Terminal",
+                        "Pune",
+                        "Maharashtra",
+                        "tahsil-office",
+                        com.printwithai.enums.KioskStatus.ACTIVE
+                ));
+            }
+        }
+
         String kioskUrl = qrCodeService.getKioskUrl(kiosk.getKioskId());
 
         // Dynamic LAN IP fallback: If opened via IP or if app.base-url is localhost, adapt QR to match the accessed host
@@ -49,7 +73,12 @@ public class KioskController {
             }
         }
 
-        String qrBase64 = qrCodeService.generateQrCodeBase64(kioskUrl, 350, 350);
+        String qrBase64 = "";
+        try {
+            qrBase64 = qrCodeService.generateQrCodeBase64(kioskUrl, 350, 350);
+        } catch (Throwable t) {
+            qrBase64 = "";
+        }
 
         model.addAttribute("kiosk", kiosk);
         model.addAttribute("qrBase64", qrBase64);

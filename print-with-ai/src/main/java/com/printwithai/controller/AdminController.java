@@ -144,10 +144,21 @@ public class AdminController {
     @PostMapping("/kiosks/save")
     public String saveKiosk(@ModelAttribute Kiosk kiosk, RedirectAttributes redirectAttributes) {
         try {
+            if (kiosk == null || kiosk.getKioskId() == null || kiosk.getKioskId().trim().isEmpty()) {
+                redirectAttributes.addFlashAttribute("errorMessage", "Machine Terminal ID is required.");
+                return "redirect:/admin/kiosks";
+            }
+            kiosk.setKioskId(kiosk.getKioskId().trim().toUpperCase());
+            if (kiosk.getName() == null || kiosk.getName().trim().isEmpty()) {
+                kiosk.setName("DigiSeva Print Terminal " + kiosk.getKioskId());
+            }
+            if (kiosk.getLocation() == null || kiosk.getLocation().trim().isEmpty()) {
+                kiosk.setLocation("Citizen Service Center");
+            }
             kioskService.saveKiosk(kiosk);
             redirectAttributes.addFlashAttribute("successMessage", "Machine terminal '" + kiosk.getKioskId() + "' saved and configured successfully.");
-        } catch (Exception e) {
-            redirectAttributes.addFlashAttribute("errorMessage", "Error saving machine: " + e.getMessage());
+        } catch (Throwable t) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Error saving machine: " + t.getMessage());
         }
         return "redirect:/admin/kiosks";
     }
