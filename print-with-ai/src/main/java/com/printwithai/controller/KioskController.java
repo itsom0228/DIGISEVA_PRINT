@@ -26,10 +26,12 @@ public class KioskController {
         this.printJobService = printJobService;
     }
 
-    @GetMapping("/display")
-    public String kioskDisplay(@org.springframework.web.bind.annotation.RequestParam(value = "kioskId", defaultValue = "LAPTOP001") String kioskId,
+    @GetMapping({"/display", "/display/{kioskId}"})
+    public String kioskDisplay(@org.springframework.web.bind.annotation.PathVariable(value = "kioskId", required = false) String pathKioskId,
+                               @org.springframework.web.bind.annotation.RequestParam(value = "kioskId", required = false) String paramKioskId,
                                jakarta.servlet.http.HttpServletRequest request,
                                Model model) {
+        String kioskId = (pathKioskId != null && !pathKioskId.trim().isEmpty()) ? pathKioskId : paramKioskId;
         if (kioskId == null || kioskId.trim().isEmpty()) {
             kioskId = "LAPTOP001";
         }

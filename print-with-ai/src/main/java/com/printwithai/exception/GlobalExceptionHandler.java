@@ -41,6 +41,13 @@ public class GlobalExceptionHandler {
         return "error/500";
     }
 
+    @ExceptionHandler(org.springframework.web.servlet.resource.NoResourceFoundException.class)
+    public String handleNoResourceFound(org.springframework.web.servlet.resource.NoResourceFoundException exc, Model model) {
+        log.warn("Resource or path not found: {}", exc.getMessage());
+        model.addAttribute("errorMessage", "The requested page was not found.");
+        return "error/404";
+    }
+
     @ExceptionHandler(Exception.class)
     public String handleGeneralException(Exception exc, Model model) {
         log.error("Unhandled exception: ", exc);

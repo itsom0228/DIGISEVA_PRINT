@@ -62,6 +62,20 @@ public class SecurityConfig {
             .headers(headers -> headers
                 .frameOptions(frame -> frame.sameOrigin())
             )
+            .addFilterAfter(new org.springframework.web.filter.OncePerRequestFilter() {
+                @Override
+                protected void doFilterInternal(jakarta.servlet.http.HttpServletRequest request,
+                                                jakarta.servlet.http.HttpServletResponse response,
+                                                jakarta.servlet.FilterChain filterChain)
+                        throws jakarta.servlet.ServletException, java.io.IOException {
+                    org.springframework.security.web.csrf.CsrfToken csrfToken = 
+                        (org.springframework.security.web.csrf.CsrfToken) request.getAttribute(org.springframework.security.web.csrf.CsrfToken.class.getName());
+                    if (csrfToken != null) {
+                        csrfToken.getToken();
+                    }
+                    filterChain.doFilter(request, response);
+                }
+            }, org.springframework.security.web.csrf.CsrfFilter.class)
             .formLogin(login -> login
                 .loginPage("/admin/login")
                 .loginProcessingUrl("/admin/login")
