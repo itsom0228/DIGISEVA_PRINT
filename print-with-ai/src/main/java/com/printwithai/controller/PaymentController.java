@@ -19,6 +19,12 @@ public class PaymentController {
     private final PaymentService paymentService;
     private final QrCodeService qrCodeService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.payment.upi.vpa:digisevaprint@upi}")
+    private String upiVpa;
+
+    @org.springframework.beans.factory.annotation.Value("${app.payment.upi.payee-name:DigiSeva Print}")
+    private String upiPayeeName;
+
     public PaymentController(PrintJobService printJobService, PaymentService paymentService, QrCodeService qrCodeService) {
         this.printJobService = printJobService;
         this.paymentService = paymentService;
@@ -31,11 +37,40 @@ public class PaymentController {
         model.addAttribute("job", job);
         model.addAttribute("paymentModes", PaymentMode.values());
 
-        // Generate simulated UPI QR string
-        String simulatedUpiPayload = String.format("upi://pay?pa=printwithai.demo@upi&pn=PrintWithAI_Kiosk&am=%s&cu=INR&tn=Order_%s",
-                job.getTotalAmount().toPlainString(), job.getPublicReference());
-        String upiQrBase64 = qrCodeService.generateQrCodeBase64(simulatedUpiPayload, 250, 250);
+        String amountStr = job.getTotalAmount().toPlainString();
+        String orderRef = job.getPublicReference();
+        String encodedPayee;
+        String encodedNote;
+        try {
+            encodedPayee = java.net.URLEncoder.encode(upiPayeeName, java.nio.charset.StandardCharsets.UTF_8).replace("+", "%20");
+            encodedNote = java.net.URLEncoder.encode("DigiSeva Print " + orderRef, java.nio.charset.StandardCharsets.UTF_8).replace("+", "%20");
+        } catch (Exception e) {
+            encodedPayee = "DigiSeva%20Print";
+            encodedNote = "Order_" + orderRef;
+        }
+
+        // Standard NPCI UPI URI with exact amount
+        String upiPayload = String.format("upi://pay?pa=%s&pn=%s&am=%s&cu=INR&tn=%s&tr=%s",
+                upiVpa, encodedPayee, amountStr, encodedNote, trackingToken);
+
+        // App-specific direct intent URIs
+        String phonepePayload = String.format("phonepe://pay?pa=%s&pn=%s&am=%s&cu=INR&tn=%s&tr=%s",
+                upiVpa, encodedPayee, amountStr, encodedNote, trackingToken);
+        String gpayPayload = String.format("tez://upi/pay?pa=%s&pn=%s&am=%s&cu=INR&tn=%s&tr=%s",
+                upiVpa, encodedPayee, amountStr, encodedNote, trackingToken);
+        String paytmPayload = String.format("paytmmp://pay?pa=%s&pn=%s&am=%s&cu=INR&tn=%s&tr=%s",
+                upiVpa, encodedPayee, amountStr, encodedNote, trackingToken);
+
+        // Generate high-resolution 300x300 QR Code with the exact UPI payload
+        String upiQrBase64 = qrCodeService.generateQrCodeBase64(upiPayload, 300, 300);
+
         model.addAttribute("upiQrBase64", upiQrBase64);
+        model.addAttribute("upiPayload", upiPayload);
+        model.addAttribute("phonepePayload", phonepePayload);
+        model.addAttribute("gpayPayload", gpayPayload);
+        model.addAttribute("paytmPayload", paytmPayload);
+        model.addAttribute("upiVpa", upiVpa);
+        model.addAttribute("upiPayeeName", upiPayeeName);
 
         return "order/payment";
     }

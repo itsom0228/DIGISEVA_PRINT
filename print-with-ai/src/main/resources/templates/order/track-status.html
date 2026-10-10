@@ -176,17 +176,7 @@
         const currentStatus = /*[[${job.jobStatus.name()}]]*/ '';
 
         function triggerBrowserPrint() {
-            const frame = document.getElementById('docPrintFrame');
-            if (frame && frame.contentWindow) {
-                try {
-                    frame.contentWindow.focus();
-                    frame.contentWindow.print();
-                    return;
-                } catch (e) {
-                    console.warn('Iframe print error:', e);
-                }
-            }
-            window.open('/print/document/' + trackingToken, '_blank');
+            window.open('/print/view/' + trackingToken, '_blank');
         }
 
         // Ctrl + P Keyboard Shortcut

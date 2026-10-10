@@ -36,6 +36,9 @@ public class MockPrinterService implements PrinterService {
     private final KioskLogRepository kioskLogRepository;
     private final StorageService storageService;
 
+    @org.springframework.beans.factory.annotation.Value("${app.printer.name:}")
+    private String configuredPrinterName;
+
     public MockPrinterService(PrintJobRepository printJobRepository,
                               KioskLogRepository kioskLogRepository,
                               StorageService storageService) {
@@ -122,86 +125,152 @@ public class MockPrinterService implements PrinterService {
      * Sends the file directly to the OS default/connected physical printer using Java Print Service & PDFBox.
      */
     private void dispatchToPhysicalPrinter(PrintJob job) {
+        Path filePath = null;
+        File file = null;
         try {
-            if (GraphicsEnvironment.isHeadless()) {
-                log.info("[HARDWARE PRINT] Environment is headless (e.g., cloud server). Skipping local OS printer spooling.");
-                return;
-            }
-
-            PrintService targetPrinter = PrintServiceLookup.lookupDefaultPrintService();
-            if (targetPrinter == null) {
-                PrintService[] availableServices = PrintServiceLookup.lookupPrintServices(null, null);
-                if (availableServices != null && availableServices.length > 0) {
-                    targetPrinter = availableServices[0];
-                }
-            }
-
-            if (targetPrinter == null) {
-                log.warn("[HARDWARE PRINT] No default or connected printer detected in Windows OS. Ready for browser auto-print fallback.");
-                return;
-            }
-
-            log.info("[HARDWARE PRINT] Connected printer detected: '{}'. Preparing job {}...",
-                    targetPrinter.getName(), job.getPublicReference());
-
-            Path filePath = storageService.load(job.getStoredFilename());
-            File file = filePath.toFile();
+            filePath = storageService.load(job.getStoredFilename());
+            file = filePath.toFile();
             if (!file.exists()) {
                 log.warn("[HARDWARE PRINT] File {} does not exist on disk for physical printing.", job.getStoredFilename());
                 return;
             }
 
-            PrinterJob printerJob = PrinterJob.getPrinterJob();
-            printerJob.setPrintService(targetPrinter);
-            int copies = (job.getCopies() != null && job.getCopies() > 0) ? job.getCopies() : 1;
-            printerJob.setCopies(copies);
-            printerJob.setJobName("DigiSeva_" + job.getPublicReference());
+            PrintService targetPrinter = null;
+            PrintService[] availableServices = null;
+            try {
+                availableServices = PrintServiceLookup.lookupPrintServices(null, null);
+            } catch (Throwable t) {
+                log.warn("[HARDWARE PRINT] Error looking up print services: {}", t.getMessage());
+            }
 
-            String lowerName = job.getStoredFilename().toLowerCase();
-            if (lowerName.endsWith(".pdf")) {
-                try (PDDocument document = Loader.loadPDF(file)) {
-                    printerJob.setPageable(new PDFPageable(document));
-                    printerJob.print();
-                    log.info("[HARDWARE PRINT] Successfully sent PDF job {} to printer '{}'!",
-                            job.getPublicReference(), targetPrinter.getName());
-                    kioskLogRepository.save(new KioskLog(
-                            job.getKioskId(),
-                            job.getPublicReference(),
-                            "HARDWARE_PRINT_SUCCESS",
-                            "Dispatched to physical printer [" + targetPrinter.getName() + "], " + copies + " copies spooled."
-                    ));
-                }
-            } else {
-                // Image file
-                BufferedImage image = ImageIO.read(file);
-                if (image != null) {
-                    printerJob.setPrintable((graphics, pageFormat, pageIndex) -> {
-                        if (pageIndex > 0) {
-                            return Printable.NO_SUCH_PAGE;
-                        }
-                        Graphics2D g2d = (Graphics2D) graphics;
-                        g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
-                        double scaleX = pageFormat.getImageableWidth() / image.getWidth();
-                        double scaleY = pageFormat.getImageableHeight() / image.getHeight();
-                        double scale = Math.min(scaleX, scaleY);
-                        g2d.scale(scale, scale);
-                        g2d.drawImage(image, 0, 0, null);
-                        return Printable.PAGE_EXISTS;
-                    });
-                    printerJob.print();
-                    log.info("[HARDWARE PRINT] Successfully sent image job {} to printer '{}'!",
-                            job.getPublicReference(), targetPrinter.getName());
-                    kioskLogRepository.save(new KioskLog(
-                            job.getKioskId(),
-                            job.getPublicReference(),
-                            "HARDWARE_PRINT_SUCCESS",
-                            "Dispatched image to physical printer [" + targetPrinter.getName() + "], " + copies + " copies spooled."
-                    ));
+            // 1. Check configured printer name
+            if (configuredPrinterName != null && !configuredPrinterName.isBlank() && availableServices != null) {
+                for (PrintService ps : availableServices) {
+                    if (ps.getName().equalsIgnoreCase(configuredPrinterName) ||
+                        ps.getName().toLowerCase().contains(configuredPrinterName.toLowerCase())) {
+                        targetPrinter = ps;
+                        log.info("[HARDWARE PRINT] Found configured printer: '{}'", ps.getName());
+                        break;
+                    }
                 }
             }
 
+            // 2. Prioritize connected physical hardware printers (non-virtual)
+            if (targetPrinter == null && availableServices != null) {
+                for (PrintService ps : availableServices) {
+                    String name = ps.getName().toLowerCase();
+                    if (!name.contains("onenote") && !name.contains("fax") && !name.contains("xps") && !name.contains("pdf")) {
+                        targetPrinter = ps;
+                        log.info("[HARDWARE PRINT] Auto-detected physical hardware printer: '{}'", ps.getName());
+                        break;
+                    }
+                }
+            }
+
+            // 3. Fallback to OS default printer
+            if (targetPrinter == null) {
+                try {
+                    targetPrinter = PrintServiceLookup.lookupDefaultPrintService();
+                } catch (Throwable ignored) {}
+            }
+
+            // 4. Fallback to any available printer service
+            if (targetPrinter == null && availableServices != null && availableServices.length > 0) {
+                targetPrinter = availableServices[0];
+            }
+
+            if (targetPrinter != null) {
+                log.info("[HARDWARE PRINT] Selected printer: '{}'. Spooling job {}...",
+                        targetPrinter.getName(), job.getPublicReference());
+
+                PrinterJob printerJob = PrinterJob.getPrinterJob();
+                printerJob.setPrintService(targetPrinter);
+                int copies = (job.getCopies() != null && job.getCopies() > 0) ? job.getCopies() : 1;
+                printerJob.setCopies(copies);
+                printerJob.setJobName("DigiSeva_" + job.getPublicReference());
+
+                javax.print.attribute.PrintRequestAttributeSet attributes = new javax.print.attribute.HashPrintRequestAttributeSet();
+                attributes.add(new javax.print.attribute.standard.Copies(copies));
+
+                // If printer is a virtual PDF printer, supply Destination so it completes without GUI prompt
+                if (targetPrinter.getName().toLowerCase().contains("pdf")) {
+                    File spoolDir = new File(file.getParentFile(), "spool_prints");
+                    if (!spoolDir.exists()) {
+                        spoolDir.mkdirs();
+                    }
+                    File spoolFile = new File(spoolDir, "PRINTED_" + job.getPublicReference() + "_" + file.getName());
+                    attributes.add(new javax.print.attribute.standard.Destination(spoolFile.toURI()));
+                    log.info("[HARDWARE PRINT] Virtual PDF spool configured to: {}", spoolFile.getAbsolutePath());
+                }
+
+                String lowerName = job.getStoredFilename().toLowerCase();
+                if (lowerName.endsWith(".pdf")) {
+                    try (PDDocument document = Loader.loadPDF(file)) {
+                        printerJob.setPageable(new PDFPageable(document));
+                        printerJob.print(attributes);
+                        log.info("[HARDWARE PRINT] Successfully sent PDF job {} ({} pages, {} copies) to printer '{}'!",
+                                job.getPublicReference(), document.getNumberOfPages(), copies, targetPrinter.getName());
+                        kioskLogRepository.save(new KioskLog(
+                                job.getKioskId(),
+                                job.getPublicReference(),
+                                "HARDWARE_PRINT_SUCCESS",
+                                "Dispatched to hardware printer [" + targetPrinter.getName() + "], " + copies + " copies spooled."
+                        ));
+                    }
+                } else {
+                    // Image file
+                    BufferedImage image = ImageIO.read(file);
+                    if (image != null) {
+                        printerJob.setPrintable((graphics, pageFormat, pageIndex) -> {
+                            if (pageIndex > 0) {
+                                return Printable.NO_SUCH_PAGE;
+                            }
+                            Graphics2D g2d = (Graphics2D) graphics;
+                            g2d.translate(pageFormat.getImageableX(), pageFormat.getImageableY());
+                            double scaleX = pageFormat.getImageableWidth() / image.getWidth();
+                            double scaleY = pageFormat.getImageableHeight() / image.getHeight();
+                            double scale = Math.min(scaleX, scaleY);
+                            g2d.scale(scale, scale);
+                            g2d.drawImage(image, 0, 0, null);
+                            return Printable.PAGE_EXISTS;
+                        });
+                        printerJob.print(attributes);
+                        log.info("[HARDWARE PRINT] Successfully sent image job {} to printer '{}'!",
+                                job.getPublicReference(), targetPrinter.getName());
+                        kioskLogRepository.save(new KioskLog(
+                                job.getKioskId(),
+                                job.getPublicReference(),
+                                "HARDWARE_PRINT_SUCCESS",
+                                "Dispatched image to hardware printer [" + targetPrinter.getName() + "], " + copies + " copies spooled."
+                        ));
+                    }
+                }
+                return;
+            }
+
+            // Fallback: Windows Desktop print command
+            if (file != null && java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.PRINT)) {
+                log.info("[HARDWARE PRINT] Fallback: Invoking Windows Desktop print command for {}", file.getName());
+                java.awt.Desktop.getDesktop().print(file);
+                kioskLogRepository.save(new KioskLog(
+                        job.getKioskId(),
+                        job.getPublicReference(),
+                        "HARDWARE_PRINT_SUCCESS",
+                        "Dispatched via Windows default printer handler."
+                ));
+            } else {
+                log.warn("[HARDWARE PRINT] No printer found and Desktop print not supported.");
+            }
+
         } catch (Throwable t) {
-            log.warn("[HARDWARE PRINT] Physical printer dispatch could not complete: {}. Browser print fallback is available.", t.getMessage());
+            log.warn("[HARDWARE PRINT] Physical printer dispatch error: {}. Browser print fallback is available.", t.getMessage());
+            // Attempt Desktop print fallback if printerJob threw
+            try {
+                if (file != null && java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.PRINT)) {
+                    log.info("[HARDWARE PRINT] Attempting Windows Desktop print fallback...");
+                    java.awt.Desktop.getDesktop().print(file);
+                }
+            } catch (Throwable ignored) {}
         }
     }
 
@@ -239,15 +308,13 @@ public class MockPrinterService implements PrinterService {
     @Override
     public String getPrinterStatus() {
         try {
-            if (!GraphicsEnvironment.isHeadless()) {
-                PrintService defaultPrintService = PrintServiceLookup.lookupDefaultPrintService();
-                if (defaultPrintService != null) {
-                    return "ONLINE (Hardware Connected: " + defaultPrintService.getName() + ")";
-                }
-                PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
-                if (services != null && services.length > 0) {
-                    return "ONLINE (Printer Detected: " + services[0].getName() + ")";
-                }
+            PrintService defaultPrintService = PrintServiceLookup.lookupDefaultPrintService();
+            if (defaultPrintService != null) {
+                return "ONLINE (Hardware Connected: " + defaultPrintService.getName() + ")";
+            }
+            PrintService[] services = PrintServiceLookup.lookupPrintServices(null, null);
+            if (services != null && services.length > 0) {
+                return "ONLINE (Printer Detected: " + services[0].getName() + ")";
             }
         } catch (Throwable ignored) {}
         return "ONLINE (Ready for Hardware & Browser Print)";
