@@ -202,13 +202,14 @@ public class MockPrinterService implements PrinterService {
                 javax.print.attribute.PrintRequestAttributeSet attributes = new javax.print.attribute.HashPrintRequestAttributeSet();
                 attributes.add(new javax.print.attribute.standard.Copies(copies));
 
+                File spoolFile = null;
                 // If printer is a virtual PDF printer and no physical printer name was set, supply Destination
                 if (targetPrinter.getName().toLowerCase().contains("pdf") && (configuredPrinterName == null || configuredPrinterName.isBlank())) {
                     File spoolDir = new File(file.getParentFile(), "spool_prints");
                     if (!spoolDir.exists()) {
                         spoolDir.mkdirs();
                     }
-                    File spoolFile = new File(spoolDir, "PRINTED_" + job.getPublicReference() + "_" + file.getName());
+                    spoolFile = new File(spoolDir, "PRINTED_" + job.getPublicReference() + "_" + file.getName());
                     attributes.add(new javax.print.attribute.standard.Destination(spoolFile.toURI()));
                     log.info("[AUTOMATIC HARDWARE PRINT] Virtual PDF spool configured to: {}", spoolFile.getAbsolutePath());
                 }
@@ -255,6 +256,10 @@ public class MockPrinterService implements PrinterService {
                         ));
                     }
                 }
+
+                // Automatically display the printed output to the user on their Windows desktop
+                File fileToOpen = (spoolFile != null && spoolFile.exists()) ? spoolFile : file;
+                openInDesktopViewer(fileToOpen);
                 return;
             }
 
@@ -262,6 +267,7 @@ public class MockPrinterService implements PrinterService {
             if (file != null && java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.PRINT)) {
                 log.info("[HARDWARE PRINT] Fallback: Invoking Windows Desktop print command for {}", file.getName());
                 java.awt.Desktop.getDesktop().print(file);
+                openInDesktopViewer(file);
                 kioskLogRepository.save(new KioskLog(
                         job.getKioskId(),
                         job.getPublicReference(),
@@ -270,6 +276,7 @@ public class MockPrinterService implements PrinterService {
                 ));
             } else {
                 log.warn("[HARDWARE PRINT] No printer found and Desktop print not supported.");
+                openInDesktopViewer(file);
             }
 
         } catch (Throwable t) {
@@ -281,6 +288,26 @@ public class MockPrinterService implements PrinterService {
                     java.awt.Desktop.getDesktop().print(file);
                 }
             } catch (Throwable ignored) {}
+        }
+    }
+
+    private void openInDesktopViewer(File fileToOpen) {
+        if (fileToOpen == null || !fileToOpen.exists()) {
+            return;
+        }
+        try {
+            String os = System.getProperty("os.name", "").toLowerCase();
+            if (os.contains("win")) {
+                new ProcessBuilder("cmd.exe", "/c", "start", "", fileToOpen.getAbsolutePath()).start();
+                log.info("[HARDWARE PRINT] Auto-opened printed document in Windows desktop viewer: {}", fileToOpen.getAbsolutePath());
+                return;
+            }
+            if (java.awt.Desktop.isDesktopSupported() && java.awt.Desktop.getDesktop().isSupported(java.awt.Desktop.Action.OPEN)) {
+                java.awt.Desktop.getDesktop().open(fileToOpen);
+                log.info("[HARDWARE PRINT] Auto-opened printed document in Desktop viewer: {}", fileToOpen.getAbsolutePath());
+            }
+        } catch (Throwable t) {
+            log.debug("[HARDWARE PRINT] Desktop viewer launch skipped: {}", t.getMessage());
         }
     }
 

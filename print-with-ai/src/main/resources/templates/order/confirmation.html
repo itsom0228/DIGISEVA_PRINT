@@ -58,13 +58,13 @@
                     <!-- Top Language Switcher Bar -->
                     <div class="d-flex justify-content-between align-items-center mb-4 pb-2 border-bottom flex-wrap gap-2">
                         <div class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill">
-                            <i class="bi bi-shield-check text-success me-1"></i> पेमेंट सत्यापित / Payment Verified
+                            <i class="bi bi-shield-check text-success me-1"></i> <span th:text="#{confirm.verified_badge}">पेमेंट सत्यापित / Payment Verified</span>
                         </div>
                         <div class="d-flex align-items-center gap-1">
                             <span class="small text-muted me-1"><i class="bi bi-translate"></i> भाषा / Language:</span>
-                            <a th:href="@{''(lang='mr')}" class="lang-switch-pill" th:classappend="${#locale.language == 'mr' ? 'active' : ''}">मराठी</a>
-                            <a th:href="@{''(lang='hi')}" class="lang-switch-pill" th:classappend="${#locale.language == 'hi' ? 'active' : ''}">हिंदी</a>
-                            <a th:href="@{''(lang='en')}" class="lang-switch-pill" th:classappend="${#locale.language == 'en' ? 'active' : ''}">English</a>
+                            <a th:href="@{/print/confirmation/{token}(token=${job.trackingToken}, lang='mr')}" class="lang-switch-pill" th:classappend="${#locale.language == 'mr' ? 'active' : ''}">मराठी</a>
+                            <a th:href="@{/print/confirmation/{token}(token=${job.trackingToken}, lang='hi')}" class="lang-switch-pill" th:classappend="${#locale.language == 'hi' ? 'active' : ''}">हिंदी</a>
+                            <a th:href="@{/print/confirmation/{token}(token=${job.trackingToken}, lang='en')}" class="lang-switch-pill" th:classappend="${#locale.language == 'en' ? 'active' : ''}">English</a>
                         </div>
                     </div>
 
@@ -73,15 +73,14 @@
                         <i class="bi bi-printer-fill display-3"></i>
                     </div>
 
-                    <!-- Trilingual Headings -->
-                    <h2 class="fw-bold mb-1 text-slate-900" id="mainHeaderMr">पेमेंट यशस्वी! स्वयंचलित प्रिंट सुरू आहे</h2>
-                    <h5 class="fw-semibold text-primary mb-1" id="mainHeaderHi">भुगतान सफल! स्वचालित प्रिंटिंग प्रगति पर है</h5>
-                    <p class="text-secondary mb-3 small" id="mainHeaderEn">Payment Successful! Document is printing automatically in the background on your connected printer.</p>
+                    <!-- Localized Heading & Subtitle -->
+                    <h2 class="fw-bold mb-1 text-slate-900" th:text="#{confirm.title}">पेमेंट यशस्वी! स्वयंचलित प्रिंट सुरू आहे</h2>
+                    <div class="text-primary fw-semibold mb-3" th:text="#{confirm.subtitle}">पेमेंट सत्यापित आणि हार्डवेअर प्रिंट स्पूलर सक्रिय</div>
 
                     <!-- Background Automatic Hardware Spooler Badge -->
                     <div class="badge bg-success-subtle text-success border border-success-subtle p-2 px-3 mb-4 d-inline-block rounded-pill shadow-sm">
                         <i class="bi bi-check-circle-fill text-success me-1"></i>
-                        <span>पार्श्वभूमीत थेट प्रिंटरवर स्पूल होत आहे &bull; Automatic Background Print Active</span>
+                        <span th:text="#{confirm.spooling_badge}">पार्श्वभूमीत थेट प्रिंटरवर स्पूल होत आहे &bull; Automatic Background Print Active</span>
                     </div>
 
                     <!-- Live Hardware Spooling Progress Stage -->
@@ -95,58 +94,77 @@
                             <div class="progress-bar progress-bar-striped progress-bar-animated bg-primary" id="liveProgressBar" role="progressbar" style="width: 70%;"></div>
                         </div>
 
-                        <!-- Trilingual Status Description -->
-                        <div class="small fw-semibold text-primary" id="liveStatusDescMr">
-                            <i class="bi bi-gear-wide-connected me-1"></i> प्रिंटर सक्रिय: कागद स्वयंचलितपणे ट्रेमधून प्रिंट होत आहे...
-                        </div>
-                        <div class="small text-secondary" id="liveStatusDescHi">
-                            प्रिंटर सक्रिय है: दस्तावेज़ स्वचालित रूप से प्रिंट हो रहा है...
-                        </div>
-                        <div class="small text-muted" id="liveStatusDescEn">
-                            Hardware spooler active. Output document dispatched to printer tray.
+                        <!-- Live Status Description -->
+                        <div class="small fw-semibold text-primary" id="liveStatusDesc">
+                            <i class="bi bi-gear-wide-connected me-1"></i> <span th:text="#{confirm.status_printing}">प्रिंटर सक्रिय: कागद स्वयंचलितपणे ट्रेमधून प्रिंट होत आहे...</span>
                         </div>
                     </div>
 
-                    <!-- Trilingual Order Details Summary Grid -->
+                    <!-- VISIBLE PRINTED DOCUMENT OUTPUT VIEWER -->
+                    <div class="card p-3 p-md-4 border-2 border-success shadow-sm mb-4 text-start" style="background: #ffffff;">
+                        <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                            <div>
+                                <h5 class="fw-bold text-success mb-1">
+                                    <i class="bi bi-file-earmark-check-fill me-1"></i>
+                                    <span th:text="#{confirm.printed_doc_title}">प्रिंट झालेला दस्तऐवज (Printed Document Output)</span>
+                                </h5>
+                                <div class="small text-muted" th:text="#{confirm.printed_doc_desc}">
+                                    प्रिंटरवर पाठवलेला प्रत्यक्ष दस्तऐवज खाली दिसत आहे:
+                                </div>
+                            </div>
+                            <a th:href="@{/print/document/{token}(token=${job.trackingToken})}" target="_blank" class="btn btn-outline-success btn-sm fw-bold">
+                                <i class="bi bi-box-arrow-up-right me-1"></i>
+                                <span th:text="#{confirm.open_pdf}">दस्तऐवज उघडा / पहा</span>
+                            </a>
+                        </div>
+                        
+                        <div class="border rounded-3 overflow-hidden shadow-sm" style="height: 520px; background: #525659;">
+                            <iframe th:src="@{/print/document/{token}(token=${job.trackingToken})}" 
+                                    style="width: 100%; height: 100%; border: none;"
+                                    title="Printed Document Output"></iframe>
+                        </div>
+                    </div>
+
+                    <!-- Order Details Summary Grid -->
                     <div class="text-start mb-4">
                         <h6 class="fw-bold text-slate-800 mb-3 border-bottom pb-2">
                             <i class="bi bi-receipt-cutoff text-primary me-1"></i> 
-                            ऑर्डर तपशील / ऑर्डर विवरण / Order Details
+                            <span th:text="#{confirm.details_heading}">ऑर्डर तपशील / Order Details</span>
                         </h6>
                         <div class="row g-3 small">
                             <div class="col-sm-6">
                                 <div class="p-3 bg-white rounded-3 border">
-                                    <span class="text-muted d-block">ऑर्डर संदर्भ / Order Reference:</span>
+                                    <span class="text-muted d-block" th:text="#{confirm.ref}">ऑर्डर संदर्भ / Order Reference:</span>
                                     <div class="fw-bold text-primary fs-6" th:text="${job.publicReference}">PAI-2026-XXXX</div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="p-3 bg-white rounded-3 border">
-                                    <span class="text-muted d-block">ट्रॅकिंग टोकन / Tracking Token:</span>
+                                    <span class="text-muted d-block" th:text="#{confirm.token}">ट्रॅकिंग टोकन / Tracking Token:</span>
                                     <div class="fw-bold text-dark fs-6" th:text="${job.trackingToken}">TRK-XXXX-XXXX</div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="p-3 bg-white rounded-3 border">
-                                    <span class="text-muted d-block">किओस्क स्थान / Kiosk Location:</span>
+                                    <span class="text-muted d-block" th:text="#{confirm.kiosk}">किओस्क स्थान / Kiosk Location:</span>
                                     <div class="fw-bold" th:text="${job.kioskName}">Tahsil Demonstration Kiosk</div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="p-3 bg-white rounded-3 border">
-                                    <span class="text-muted d-block">दस्तावेज / Document:</span>
+                                    <span class="text-muted d-block" th:text="#{confirm.doc}">दस्तावेज / Document:</span>
                                     <div class="fw-bold text-truncate" th:text="${job.originalFilename}">Doc.pdf</div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="p-3 bg-white rounded-3 border">
-                                    <span class="text-muted d-block">पेमेंट रक्कम / Paid Amount:</span>
+                                    <span class="text-muted d-block" th:text="#{confirm.paid}">पेमेंट रक्कम / Paid Amount:</span>
                                     <div class="fw-bold text-success fs-6" th:text="'₹' + ${job.totalAmount}">₹10.00</div>
                                 </div>
                             </div>
                             <div class="col-sm-6">
                                 <div class="p-3 bg-white rounded-3 border">
-                                    <span class="text-muted d-block">प्रिंट प्रकार व प्रती / Mode & Copies:</span>
+                                    <span class="text-muted d-block" th:text="#{confirm.mode}">प्रिंट प्रकार व प्रती / Mode & Copies:</span>
                                     <div class="fw-bold" th:text="${job.printType.displayName} + ' (' + ${job.copies} + ' copy)'">Black & White (1 copy)</div>
                                 </div>
                             </div>
@@ -157,15 +175,15 @@
                     <div class="d-flex flex-wrap justify-content-center gap-3 pt-2">
                         <a th:href="@{/order/track/{token}(token=${job.trackingToken})}" class="btn btn-primary-custom px-4 py-2">
                             <i class="bi bi-geo-alt me-1"></i> 
-                            <span>ऑर्डर स्थिती ट्रॅक करा / Track Order</span>
+                            <span th:text="#{confirm.track_btn}">ऑर्डर स्थिती ट्रॅक करा / Track Order</span>
                         </a>
                         <a th:href="@{/print/document/{token}(token=${job.trackingToken})}" target="_blank" class="btn btn-outline-secondary px-4 py-2">
                             <i class="bi bi-file-earmark-pdf me-1"></i> 
-                            <span>अपलोड केलेला PDF पहा / View PDF</span>
+                            <span th:text="#{confirm.open_pdf}">दस्तऐवज उघडा / View Document</span>
                         </a>
                         <a th:href="@{/print/new(kioskId=${job.kioskId})}" class="btn btn-secondary-custom px-4 py-2">
                             <i class="bi bi-plus-circle me-1"></i> 
-                            <span>नवीन प्रिंट करा / Print Another</span>
+                            <span th:text="#{confirm.print_another}">नवीन प्रिंट करा / Print Another</span>
                         </a>
                     </div>
                 </div>
@@ -182,9 +200,11 @@
         const liveStatusText = document.getElementById('liveStatusText');
         const liveStatusBadge = document.getElementById('liveStatusBadge');
         const liveProgressBar = document.getElementById('liveProgressBar');
-        const liveStatusDescMr = document.getElementById('liveStatusDescMr');
-        const liveStatusDescHi = document.getElementById('liveStatusDescHi');
-        const liveStatusDescEn = document.getElementById('liveStatusDescEn');
+        const liveStatusDesc = document.getElementById('liveStatusDesc');
+
+        const msgQueued = /*[[#{confirm.status_queued}]]*/ 'Document placed in printer spool queue...';
+        const msgPrinting = /*[[#{confirm.status_printing}]]*/ 'Printer active: pages printing in progress...';
+        const msgCompleted = /*[[#{confirm.status_completed}]]*/ 'Done! Document printed successfully. Collect from tray.';
 
         let intervalId = setInterval(checkStatus, 1500);
 
@@ -199,26 +219,20 @@
 
                     if (data.jobStatus === 'QUEUED') {
                         liveProgressBar.style.width = '45%';
-                        liveStatusDescMr.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> दस्तऐवज प्रिंटरच्या बफरमध्ये ठेवला आहे...';
-                        liveStatusDescHi.textContent = 'दस्तावेज़ प्रिंटर कतार में है...';
-                        liveStatusDescEn.textContent = 'Document placed in printer spool queue...';
+                        liveStatusDesc.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> ' + msgQueued;
                     } else if (data.jobStatus === 'PRINTING') {
                         liveProgressBar.style.width = '80%';
-                        liveStatusDescMr.innerHTML = '<i class="bi bi-printer me-1"></i> प्रिंटर सक्रिय: कागद प्रत्यक्ष प्रिंट होत आहे...';
-                        liveStatusDescHi.textContent = 'प्रिंटर सक्रिय है: दस्तावेज़ प्रिंट हो रहा है...';
-                        liveStatusDescEn.textContent = 'Printer active: pages printing in progress...';
+                        liveStatusDesc.innerHTML = '<i class="bi bi-printer me-1"></i> ' + msgPrinting;
                     } else if (data.jobStatus === 'COMPLETED') {
                         liveProgressBar.style.width = '100%';
                         liveProgressBar.classList.remove('progress-bar-animated', 'progress-bar-striped');
                         liveProgressBar.classList.add('bg-success');
-                        liveStatusDescMr.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i> प्रिंट पूर्ण झाले! कृपया प्रिंटर ट्रेमधून दस्तऐवज गोळा करा.';
-                        liveStatusDescHi.textContent = 'प्रिंटिंग पूरी हुई! कृपया प्रिंटर ट्रे से दस्तावेज़ प्राप्त करें।';
-                        liveStatusDescEn.textContent = 'Done! Document printed successfully. Ready in pickup tray.';
+                        liveStatusDesc.innerHTML = '<i class="bi bi-check-circle-fill text-success me-1"></i> ' + msgCompleted;
                         clearInterval(intervalId);
                     } else if (data.jobStatus === 'FAILED' || data.jobStatus === 'CANCELLED') {
                         liveProgressBar.style.width = '100%';
                         liveProgressBar.classList.add('bg-danger');
-                        liveStatusDescMr.textContent = 'प्रिंटिंगमध्ये त्रुटी: ' + (data.failureReason || 'Failed');
+                        liveStatusDesc.textContent = 'Error: ' + (data.failureReason || 'Failed');
                         clearInterval(intervalId);
                     }
                 }

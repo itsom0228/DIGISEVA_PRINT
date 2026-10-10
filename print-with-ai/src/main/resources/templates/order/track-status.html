@@ -45,9 +45,9 @@
                                 <span class="badge bg-secondary" th:text="'REF: ' + ${job.publicReference}">PAI-2026-XXXX</span>
                                 <div class="d-flex align-items-center gap-1 ms-2">
                                     <span class="small text-muted"><i class="bi bi-translate"></i></span>
-                                    <a th:href="@{''(lang='mr')}" class="lang-switch-pill" th:classappend="${#locale.language == 'mr' ? 'active' : ''}">मराठी</a>
-                                    <a th:href="@{''(lang='hi')}" class="lang-switch-pill" th:classappend="${#locale.language == 'hi' ? 'active' : ''}">हिंदी</a>
-                                    <a th:href="@{''(lang='en')}" class="lang-switch-pill" th:classappend="${#locale.language == 'en' ? 'active' : ''}">EN</a>
+                                    <a th:href="@{/order/track/{token}(token=${job.trackingToken}, lang='mr')}" class="lang-switch-pill" th:classappend="${#locale.language == 'mr' ? 'active' : ''}">मराठी</a>
+                                    <a th:href="@{/order/track/{token}(token=${job.trackingToken}, lang='hi')}" class="lang-switch-pill" th:classappend="${#locale.language == 'hi' ? 'active' : ''}">हिंदी</a>
+                                    <a th:href="@{/order/track/{token}(token=${job.trackingToken}, lang='en')}" class="lang-switch-pill" th:classappend="${#locale.language == 'en' ? 'active' : ''}">English</a>
                                 </div>
                             </div>
                             <h3 class="fw-bold mb-0 text-slate-900">थेट ऑर्डर ट्रॅकिंग &bull; Live Tracking</h3>

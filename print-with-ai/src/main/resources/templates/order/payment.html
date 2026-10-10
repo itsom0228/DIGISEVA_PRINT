@@ -126,23 +126,23 @@
                         </div>
                         <div class="d-flex align-items-center gap-1">
                             <span class="small text-muted me-1"><i class="bi bi-translate"></i> भाषा / Language:</span>
-                            <a th:href="@{''(lang='mr')}" class="lang-switch-pill" th:classappend="${#locale.language == 'mr' ? 'active' : ''}">मराठी</a>
-                            <a th:href="@{''(lang='hi')}" class="lang-switch-pill" th:classappend="${#locale.language == 'hi' ? 'active' : ''}">हिंदी</a>
-                            <a th:href="@{''(lang='en')}" class="lang-switch-pill" th:classappend="${#locale.language == 'en' ? 'active' : ''}">English</a>
+                            <a th:href="@{/print/payment/{token}(token=${job.trackingToken}, lang='mr')}" class="lang-switch-pill" th:classappend="${#locale.language == 'mr' ? 'active' : ''}">मराठी</a>
+                            <a th:href="@{/print/payment/{token}(token=${job.trackingToken}, lang='hi')}" class="lang-switch-pill" th:classappend="${#locale.language == 'hi' ? 'active' : ''}">हिंदी</a>
+                            <a th:href="@{/print/payment/{token}(token=${job.trackingToken}, lang='en')}" class="lang-switch-pill" th:classappend="${#locale.language == 'en' ? 'active' : ''}">English</a>
                         </div>
                     </div>
 
                     <!-- Header with Order Ref & Live Amount Due -->
                     <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom flex-wrap gap-3">
                         <div>
-                            <h2 class="fw-bold mb-0 text-slate-900">पेमेंट पुष्टीकरण &bull; Pay & Print</h2>
-                            <div class="text-primary fw-semibold small mt-1">भुगतान पुष्टि &bull; Complete Payment (Instant Auto-Print)</div>
+                            <h2 class="fw-bold mb-0 text-slate-900" th:text="#{payment.title}">पेमेंट पुष्टीकरण</h2>
+                            <div class="text-primary fw-semibold small mt-1" th:text="#{payment.subtitle}">PhonePe, Google Pay, Paytm व BHIM द्वारे सुरक्षित पेमेंट</div>
                             <div class="small text-muted mt-1">
-                                <i class="bi bi-shield-lock-fill text-success me-1"></i> PhonePe, Google Pay, Paytm व BHIM द्वारे सुरक्षित पेमेंट
+                                <i class="bi bi-shield-lock-fill text-success me-1"></i> <span th:text="#{payment.disclaimer}">PhonePe, Google Pay, Paytm व BHIM द्वारे सुरक्षित पेमेंट</span>
                             </div>
                         </div>
                         <div class="text-end bg-primary-subtle p-3 rounded-4 border border-primary-subtle">
-                            <div class="small fw-semibold text-primary text-uppercase" style="letter-spacing: 0.5px;">देय रक्कम / देय राशि / Amount</div>
+                            <div class="small fw-semibold text-primary text-uppercase" style="letter-spacing: 0.5px;" th:text="#{payment.amount_due}">देय रक्कम / देय राशि / Amount</div>
                             <div class="fs-1 fw-extrabold text-primary lh-1 mt-1" th:text="'₹' + ${job.totalAmount}">₹10.00</div>
                         </div>
                     </div>
@@ -151,20 +151,20 @@
                     <div class="p-3 bg-light rounded-3 mb-4 border">
                         <div class="row g-2 small">
                             <div class="col-6 col-md-3">
-                                <span class="text-muted d-block">दस्तावेज / File:</span>
+                                <span class="text-muted d-block" th:text="#{payment.doc}">दस्तावेज / File:</span>
                                 <strong class="text-truncate d-block" th:text="${job.originalFilename}">Doc.pdf</strong>
                             </div>
                             <div class="col-6 col-md-3">
-                                <span class="text-muted d-block">प्रिंट प्रकार / Mode:</span>
+                                <span class="text-muted d-block" th:text="#{payment.mode}">प्रिंट प्रकार / Mode:</span>
                                 <strong th:text="${job.printType.displayName}">Black & White</strong>
                             </div>
                             <div class="col-6 col-md-3">
-                                <span class="text-muted d-block">पृष्ठे / Pages:</span>
-                                <strong th:text="${job.selectedPageCount} + ' पृष्ठे'">1 पृष्ठे</strong>
+                                <span class="text-muted d-block" th:text="#{payment.pages}">पृष्ठे / Pages:</span>
+                                <strong th:text="${job.selectedPageCount} + ' ' + #{payment.pages_suffix}">1 पृष्ठे</strong>
                             </div>
                             <div class="col-6 col-md-3">
-                                <span class="text-muted d-block">प्रती / Copies:</span>
-                                <strong th:text="${job.copies} + ' Copy'">1 Copy</strong>
+                                <span class="text-muted d-block" th:text="#{payment.copies}">प्रती / Copies:</span>
+                                <strong th:text="${job.copies} + ' ' + #{payment.copies_suffix}">1 Copy</strong>
                             </div>
                         </div>
                     </div>
@@ -178,7 +178,7 @@
                                 <div class="form-check m-0">
                                     <input class="form-check-input" type="radio" name="paymentMode" id="modeUpi" value="DEMO_UPI" checked>
                                     <label class="form-check-label fw-bold text-dark fs-5" for="modeUpi">
-                                        <i class="bi bi-qr-code-scan text-primary me-1"></i> त्वरित UPI पेमेंट (PhonePe / GPay / Paytm)
+                                        <i class="bi bi-qr-code-scan text-primary me-1"></i> <span th:text="#{payment.upi_heading}">त्वरित UPI पेमेंट (PhonePe / GPay / Paytm)</span>
                                     </label>
                                 </div>
                                 <div class="d-flex gap-1 flex-wrap">
@@ -198,7 +198,7 @@
                                              alt="PhonePe GPay Paytm UPI QR" 
                                              class="img-fluid rounded"
                                              style="width: 210px; height: 210px; object-fit: contain;">
-                                        <div class="mt-2 fw-bold text-dark fs-6" th:text="'स्कॅन करा आणि ₹' + ${job.totalAmount} + ' भरा'">स्कॅन करा आणि भरा</div>
+                                        <div class="mt-2 fw-bold text-dark fs-6" th:text="#{payment.upi_scan_hint} + ' (₹' + ${job.totalAmount} + ')'">स्कॅन करा आणि भरा</div>
                                     </div>
 
                                     <div class="mt-3">
@@ -209,17 +209,17 @@
                                                 <i class="bi bi-clipboard" id="copyIcon"></i>
                                             </button>
                                         </div>
-                                        <div class="small text-muted mt-1" id="copyFeedback">लॅपटॉपवरून मोबाईलच्या कॅमेऱ्याने QR स्कॅन करा</div>
+                                        <div class="small text-muted mt-1" id="copyFeedback" th:text="#{payment.scan_camera_hint}">लॅपटॉपवरून मोबाईलच्या कॅमेऱ्याने QR स्कॅन करा</div>
                                     </div>
                                 </div>
 
                                 <!-- RIGHT: 1-Tap Mobile Buttons (For Smartphone Users Opening directly in Apps) -->
                                 <div class="col-md-7">
                                     <h6 class="fw-bold text-slate-800 mb-2">
-                                        <i class="bi bi-phone-vibrate text-primary me-1"></i> मोबाईलवरून थेट ॲप उघडा (१-क्लिक):
+                                        <i class="bi bi-phone-vibrate text-primary me-1"></i> <span th:text="#{payment.mobile_apps_heading}">मोबाईलवरून थेट ॲप उघडा (१-क्लिक):</span>
                                     </h6>
-                                    <p class="small text-muted mb-3">
-                                        खालीलपैकी कोणत्याही ॲपवर क्लिक करा. ॲप थेट <strong>₹<span th:text="${job.totalAmount}"></span></strong> रकमेसह उघडेल:
+                                    <p class="small text-muted mb-3" th:text="#{payment.mobile_apps_subtext}">
+                                        खालीलपैकी कोणत्याही ॲपवर क्लिक करा. ॲप थेट अचूक रकमेसह उघडेल:
                                     </p>
 
                                     <div class="d-grid gap-2 mb-3">
@@ -228,7 +228,7 @@
                                         <a th:href="${phonepePayload}" class="upi-app-btn btn-phonepe">
                                             <span class="d-flex align-items-center gap-2">
                                                 <i class="bi bi-phone-fill fs-5"></i>
-                                                <span>PhonePe ने उघडा व भरा</span>
+                                                <span th:text="#{payment.phonepe_btn}">PhonePe ने उघडा व भरा</span>
                                             </span>
                                             <span class="badge bg-white text-dark px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹10.00</span>
                                         </a>
@@ -237,7 +237,7 @@
                                         <a th:href="${gpayPayload}" class="upi-app-btn btn-gpay">
                                             <span class="d-flex align-items-center gap-2">
                                                 <i class="bi bi-google text-primary fs-5"></i>
-                                                <span class="text-dark">Google Pay (GPay) ने उघडा</span>
+                                                <span class="text-dark" th:text="#{payment.gpay_btn}">Google Pay (GPay) ने उघडा</span>
                                             </span>
                                             <span class="badge bg-primary text-white px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹10.00</span>
                                         </a>
@@ -246,7 +246,7 @@
                                         <a th:href="${paytmPayload}" class="upi-app-btn btn-paytm">
                                             <span class="d-flex align-items-center gap-2">
                                                 <i class="bi bi-wallet-fill fs-5"></i>
-                                                <span>Paytm ने उघडा व भरा</span>
+                                                <span th:text="#{payment.paytm_btn}">Paytm ने उघडा व भरा</span>
                                             </span>
                                             <span class="badge bg-white text-primary px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹10.00</span>
                                         </a>
@@ -255,7 +255,7 @@
                                         <a th:href="${upiPayload}" class="upi-app-btn btn-any-upi">
                                             <span class="d-flex align-items-center gap-2">
                                                 <i class="bi bi-arrow-up-right-circle-fill fs-5"></i>
-                                                <span>इतर UPI ॲपने भरा (BHIM / सर्व ॲप्स)</span>
+                                                <span th:text="#{payment.bhim_btn}">इतर UPI ॲपने भरा (BHIM / सर्व ॲप्स)</span>
                                             </span>
                                             <span class="badge bg-white text-success px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹10.00</span>
                                         </a>
@@ -265,13 +265,13 @@
                                     <!-- Optional UTR Reference Input -->
                                     <div class="p-2 bg-light rounded-3 border">
                                         <label class="form-label small text-muted mb-1 fw-semibold">
-                                            <i class="bi bi-check-all text-success me-1"></i> UPI ट्रान्झॅक्शन आयडी / UTR (पर्यायी):
+                                            <i class="bi bi-check-all text-success me-1"></i> <span th:text="#{payment.utr_label}">UPI ट्रान्झॅक्शन आयडी / UTR (पर्यायी):</span>
                                         </label>
                                         <input type="text" 
                                                class="form-control form-control-sm" 
                                                name="simulatedUpiId" 
                                                id="simulatedUpiId" 
-                                               placeholder="उदा. 12 अंकी UTR किंवा PhonePe/GPay ट्रान्झॅक्शन आयडी" 
+                                               th:placeholder="#{payment.utr_placeholder}" 
                                                th:value="'UPI-SUCCESS-' + ${job.publicReference}">
                                     </div>
 
@@ -283,10 +283,10 @@
                         <div class="card p-3 mb-4 border">
                             <div class="form-check">
                                 <input class="form-check-input" type="radio" name="paymentMode" id="modeCash" value="DEMO_CASH">
-                                <label class="form-check-label fw-bold text-dark" for="modeCash" th:text="#{payment.cash}">
+                                <label class="form-check-label fw-bold text-dark" for="modeCash" th:text="#{payment.cash_heading}">
                                     कार्यालयीन काउंटरवर रोख रक्कम जमा करा (Cash at Counter)
                                 </label>
-                                <div class="small text-muted mt-1">
+                                <div class="small text-muted mt-1" th:text="#{payment.cash_desc}">
                                     डिजिटल पेमेंट उपलब्ध नसल्यास ऑपरेटरकडे रोख रक्कम देऊन तत्काळ प्रिंट प्राप्त करा.
                                 </div>
                             </div>
@@ -296,10 +296,10 @@
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-lg btn-success shadow-lg py-3 fw-bold fs-5" id="btnSubmitPayment">
                                 <i class="bi bi-printer-fill me-2"></i>
-                                <span>पेमेंट केले आहे • त्वरित प्रिंट सुरू करा / Confirm & Print Now</span>
+                                <span th:text="#{payment.pay_btn}">पेमेंट केले आहे • त्वरित प्रिंट सुरू करा</span>
                             </button>
                             <div class="text-center small text-muted mt-2">
-                                <i class="bi bi-info-circle me-1"></i> पेमेंटची पुष्टी करताच डॉक्युमेंट थेट कनेक्टेड प्रिंटरवर स्पूल होईल.
+                                <i class="bi bi-info-circle me-1"></i> <span th:text="#{payment.auto_note}">पेमेंटची पुष्टी करताच डॉक्युमेंट थेट कनेक्टेड प्रिंटरवर स्पूल होईल.</span>
                             </div>
                         </div>
 
@@ -317,16 +317,18 @@
     <script th:inline="javascript">
         function copyUpiId() {
             const upiInput = document.getElementById('upiVpaField');
+            const msgCopied = /*[[#{payment.copied}]]*/ 'UPI ID कॉपी केला!';
+            const msgCamera = /*[[#{payment.scan_camera_hint}]]*/ 'लॅपटॉपवरून मोबाईलच्या कॅमेऱ्याने QR स्कॅन करा';
             if (upiInput) {
                 navigator.clipboard.writeText(upiInput.value).then(() => {
                     const feedback = document.getElementById('copyFeedback');
                     const copyIcon = document.getElementById('copyIcon');
                     copyIcon.className = 'bi bi-check-lg text-success';
-                    feedback.textContent = 'UPI ID कॉपी केला! PhonePe किंवा GPay मध्ये पेस्ट करा.';
+                    feedback.textContent = msgCopied;
                     feedback.className = 'small text-success mt-1 fw-bold';
                     setTimeout(() => {
                         copyIcon.className = 'bi bi-clipboard';
-                        feedback.textContent = 'लॅपटॉपवरून मोबाईलच्या कॅमेऱ्याने QR स्कॅन करा';
+                        feedback.textContent = msgCamera;
                         feedback.className = 'small text-muted mt-1';
                     }, 3000);
                 });
@@ -336,10 +338,11 @@
         // Show spinner on submit
         const form = document.getElementById('paymentForm');
         const submitBtn = document.getElementById('btnSubmitPayment');
+        const msgSpooling = /*[[#{payment.spooling}]]*/ 'प्रिंटरवर पाठवत आहे...';
         if (form && submitBtn) {
             form.addEventListener('submit', function() {
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> प्रिंटरवर पाठवत आहे... (Spooling to Printer)';
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> ' + msgSpooling;
             });
         }
     </script>
