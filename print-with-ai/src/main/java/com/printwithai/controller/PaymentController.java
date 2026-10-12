@@ -75,17 +75,14 @@ public class PaymentController {
             encodedNote = "Order_" + orderRef;
         }
 
-        // Standard NPCI UPI URI with exact amount
-        String upiPayload = String.format("upi://pay?pa=%s&pn=%s&am=%s&cu=INR&tn=%s&tr=%s",
-                upiVpa, encodedPayee, amountStr, encodedNote, trackingToken);
+        // Clean P2P NPCI UPI URI with exact amount (Omit merchant 'tr=' and custom schemes to eliminate "Payment failed for security reasons")
+        String upiPayload = String.format("upi://pay?pa=%s&pn=%s&am=%s&cu=INR&tn=%s",
+                upiVpa, encodedPayee, amountStr, encodedNote);
 
-        // App-specific direct intent URIs
-        String phonepePayload = String.format("phonepe://pay?pa=%s&pn=%s&am=%s&cu=INR&tn=%s&tr=%s",
-                upiVpa, encodedPayee, amountStr, encodedNote, trackingToken);
-        String gpayPayload = String.format("tez://upi/pay?pa=%s&pn=%s&am=%s&cu=INR&tn=%s&tr=%s",
-                upiVpa, encodedPayee, amountStr, encodedNote, trackingToken);
-        String paytmPayload = String.format("paytmmp://pay?pa=%s&pn=%s&am=%s&cu=INR&tn=%s&tr=%s",
-                upiVpa, encodedPayee, amountStr, encodedNote, trackingToken);
+        // Standard Universal Android Intent for PhonePe, GPay, Paytm without merchant restrictions
+        String phonepePayload = upiPayload;
+        String gpayPayload = upiPayload;
+        String paytmPayload = upiPayload;
 
         model.addAttribute("upiPayload", upiPayload);
         model.addAttribute("phonepePayload", phonepePayload);
@@ -225,52 +222,7 @@ public class PaymentController {
         }
     }
 
-    /**
-     * Automated Webhook / SMS Notification Endpoint:
-     * An Android SMS/UPI Forwarder app on the owner's phone can POST to this endpoint.
-     */
-    @PostMapping("/api/upi-webhook")
-    @ResponseBody
-    public ResponseEntity<Map<String, Object>> upiNotificationWebhook(@RequestBody Map<String, Object> payload) {
-        String utr = (String) payload.get("utr");
-        Object amountObj = payload.get("amount");
-        String trackingToken = (String) payload.get("trackingToken");
 
-        if (utr == null || utr.isBlank()) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "Missing UTR"));
-        }
-
-        BigDecimal amount = BigDecimal.ZERO;
-        if (amountObj instanceof Number) {
-            amount = BigDecimal.valueOf(((Number) amountObj).doubleValue());
-        } else if (amountObj instanceof String) {
-            try {
-                amount = new BigDecimal((String) amountObj);
-            } catch (Exception ignored) {}
-        }
-
-        // Find matching job by trackingToken or search pending transaction with this UTR
-        PrintJob targetJob = null;
-        if (trackingToken != null && !trackingToken.isBlank()) {
-            targetJob = printJobService.getOrderByTrackingToken(trackingToken);
-        } else {
-            Optional<PaymentTransaction> txnOpt = paymentTransactionRepository.findByTransactionReference(utr.trim().toUpperCase());
-            if (txnOpt.isPresent()) {
-                targetJob = txnOpt.get().getPrintJob();
-            }
-        }
-
-        if (targetJob == null) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", "No matching pending order found for UTR: " + utr));
-        }
-
-        try {
-            paymentService.verifyAndApprovePayment(targetJob.getTrackingToken(), amount, "Automated UPI Webhook");
-            return ResponseEntity.ok(Map.of("success", true, "message", "Webhook verified and job printed!"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
-        }
-    }
 
     @GetMapping("/confirmation/{trackingToken}")
     public String showConfirmationPage(@PathVariable("trackingToken") String trackingToken, Model model) {

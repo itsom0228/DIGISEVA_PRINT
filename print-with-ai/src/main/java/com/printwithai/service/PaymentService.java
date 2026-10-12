@@ -15,4 +15,6 @@ public interface PaymentService {
     void rejectPayment(String trackingToken, String reason);
 
     PaymentTransaction getTransaction(String transactionReference);
+
+    java.util.Optional<com.printwithai.entity.PrintJob> processIncomingNotification(String utr, BigDecimal amount, String sender, String rawText);
 }

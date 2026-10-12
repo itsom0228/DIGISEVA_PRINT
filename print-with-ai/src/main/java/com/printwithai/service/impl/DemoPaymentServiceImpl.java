@@ -31,16 +31,19 @@ public class DemoPaymentServiceImpl implements PaymentService {
     private final PaymentTransactionRepository paymentTransactionRepository;
     private final PrinterService printerService;
     private final KioskLogRepository kioskLogRepository;
+    private final com.printwithai.repository.IncomingPaymentNotificationRepository incomingPaymentNotificationRepository;
 
     public DemoPaymentServiceImpl(
             PrintJobRepository printJobRepository,
             PaymentTransactionRepository paymentTransactionRepository,
             PrinterService printerService,
-            KioskLogRepository kioskLogRepository) {
+            KioskLogRepository kioskLogRepository,
+            com.printwithai.repository.IncomingPaymentNotificationRepository incomingPaymentNotificationRepository) {
         this.printJobRepository = printJobRepository;
         this.paymentTransactionRepository = paymentTransactionRepository;
         this.printerService = printerService;
         this.kioskLogRepository = kioskLogRepository;
+        this.incomingPaymentNotificationRepository = incomingPaymentNotificationRepository;
     }
 
     @Override
@@ -106,6 +109,20 @@ public class DemoPaymentServiceImpl implements PaymentService {
 
         log.info("[PAYMENT UTR SUBMITTED] Job {}: UTR {} recorded. Awaiting cross-verification before printing.",
                 job.getPublicReference(), cleanUtr);
+
+        // AUTOMATED VERIFICATION CHECK:
+        // Check if an SMS notification for this UTR was already captured earlier
+        Optional<com.printwithai.entity.IncomingPaymentNotification> existingNotif =
+                incomingPaymentNotificationRepository.findFirstByUtrOrderByCreatedAtDesc(cleanUtr);
+        if (existingNotif.isPresent()) {
+            com.printwithai.entity.IncomingPaymentNotification notif = existingNotif.get();
+            if (notif.getCreatedAt().isAfter(java.time.LocalDateTime.now().minusMinutes(30))) {
+                log.info("[AUTO-VERIFY] Matching SMS/UPI notification found for UTR {}! Auto-approving without manual click...", cleanUtr);
+                notif.setMatched(true);
+                incomingPaymentNotificationRepository.save(notif);
+                return verifyAndApprovePayment(trackingToken, notif.getAmount(), "Automated PhonePe SMS Listener");
+            }
+        }
 
         // NOTICE: printerService.submitJob(job) is INTENTIONALLY NOT CALLED HERE.
         // Printing only occurs once payment is genuinely cross-verified!
@@ -264,5 +281,45 @@ public class DemoPaymentServiceImpl implements PaymentService {
     public PaymentTransaction getTransaction(String transactionReference) {
         return paymentTransactionRepository.findByTransactionReference(transactionReference)
                 .orElseThrow(() -> new ResourceNotFoundException("Payment transaction not found: " + transactionReference));
+    }
+
+    @Override
+    @Transactional
+    public Optional<PrintJob> processIncomingNotification(String utr, BigDecimal amount, String sender, String rawText) {
+        if (utr == null || utr.isBlank()) {
+            return Optional.empty();
+        }
+
+        String cleanUtr = utr.trim().toUpperCase();
+        BigDecimal validAmount = (amount != null && amount.compareTo(BigDecimal.ZERO) > 0) ? amount : BigDecimal.ZERO;
+
+        com.printwithai.entity.IncomingPaymentNotification notification =
+                new com.printwithai.entity.IncomingPaymentNotification(cleanUtr, validAmount, sender, rawText);
+        incomingPaymentNotificationRepository.save(notification);
+
+        log.info("[INCOMING NOTIFICATION] Recorded SMS notification: UTR={}, Amount=₹{}, Sender={}", cleanUtr, validAmount, sender);
+
+        // Find active pending job matching this UTR
+        Optional<PaymentTransaction> txnOpt = paymentTransactionRepository.findByTransactionReference(cleanUtr);
+        if (txnOpt.isPresent()) {
+            PaymentTransaction txn = txnOpt.get();
+            PrintJob job = txn.getPrintJob();
+            if (job != null && job.getPaymentStatus() != PaymentStatus.DEMO_SUCCESS) {
+                notification.setMatched(true);
+                incomingPaymentNotificationRepository.save(notification);
+
+                if (validAmount.compareTo(job.getTotalAmount()) >= 0) {
+                    verifyAndApprovePayment(job.getTrackingToken(), validAmount, "Automated PhonePe SMS Listener");
+                    log.info("[AUTO-VERIFY] Automatically verified order {} via incoming SMS. Printing started!", job.getPublicReference());
+                } else {
+                    rejectPayment(job.getTrackingToken(), "Insufficient payment: Received ₹" + validAmount + " but required ₹" + job.getTotalAmount());
+                    log.warn("[AUTO-REJECT] Automatically rejected order {} due to insufficient payment (₹{} < ₹{})",
+                            job.getPublicReference(), validAmount, job.getTotalAmount());
+                }
+                return Optional.of(job);
+            }
+        }
+
+        return Optional.empty();
     }
 }

@@ -165,36 +165,54 @@
                             <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                                 <div class="d-flex align-items-center gap-2">
                                     <i class="bi bi-wallet2 text-primary fs-4"></i>
-                                    <span class="fw-bold text-dark fs-6">अधिकृत UPI पेमेंट तपशील (Official UPI Details)</span>
+                                    <span class="fw-bold text-dark fs-6">अधिकृत पेमेंट तपशील (Official UPI Details)</span>
                                 </div>
                                 <div class="d-flex gap-1">
                                     <span class="app-badge-pill bg-purple text-white" style="background:#5f259f;"><i class="bi bi-phone"></i> PhonePe</span>
                                     <span class="app-badge-pill bg-white text-dark border"><i class="bi bi-google text-primary"></i> GPay</span>
                                     <span class="app-badge-pill text-white" style="background:#00b9f5;"><i class="bi bi-wallet2"></i> Paytm</span>
-                                    <span class="app-badge-pill bg-success text-white"><i class="bi bi-shield-check"></i> Verified</span>
+                                    <span class="app-badge-pill bg-success text-white"><i class="bi bi-shield-check"></i> 100% Safe</span>
                                 </div>
                             </div>
 
                             <div class="bg-white p-3 rounded-3 border text-center my-3">
-                                <div class="small text-muted fw-semibold text-uppercase mb-1">
+                                <div class="small text-muted fw-semibold text-uppercase mb-2">
                                     <i class="bi bi-patch-check-fill text-primary me-1"></i> पेयीचे नाव (Payee): <strong class="text-dark" th:text="${upiPayeeName}">Omkar Vilas Sarpane</strong>
                                 </div>
-                                <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap mt-2">
-                                    <span class="badge bg-light text-dark border px-2 py-1 small">UPI ID</span>
-                                    <span class="fs-3 fw-extrabold text-primary font-monospace" id="upiVpaField" th:text="${upiVpa}">7820939263@ibl</span>
+
+                                <!-- UPI ID ROW -->
+                                <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap my-2 p-2 bg-light rounded-3">
+                                    <span class="badge bg-secondary-subtle text-dark border px-2 py-1 small">UPI ID</span>
+                                    <span class="fs-4 fw-extrabold text-primary font-monospace" id="upiVpaField" th:text="${upiVpa}">7820939263@ibl</span>
                                     <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" type="button" onclick="copyUpiId()" id="btnCopyUpi">
                                         <i class="bi bi-clipboard me-1" id="copyIcon"></i> <span id="copyBtnText">UPI ID कॉपी करा</span>
                                     </button>
                                 </div>
-                                <div class="small text-muted mt-2" id="copyFeedback">
-                                    <i class="bi bi-info-circle text-primary me-1"></i> वरील UPI ID वर कोणत्याही ॲपने अचूक <strong>₹<span th:text="${job.totalAmount}">2.00</span></strong> पाठवा.
+
+                                <!-- PHONE NUMBER ROW (Bypasses security reasons error) -->
+                                <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap my-2 p-2 bg-light rounded-3">
+                                    <span class="badge bg-purple text-white px-2 py-1 small" style="background:#5f259f;"><i class="bi bi-phone-fill"></i> PhonePe / GPay नंबर</span>
+                                    <span class="fs-4 fw-extrabold text-dark font-monospace" id="upiMobileField">7820939263</span>
+                                    <button class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold" type="button" onclick="copyMobileNumber()" id="btnCopyMobile">
+                                        <i class="bi bi-copy me-1" id="copyMobileIcon"></i> <span id="copyMobileBtnText">नंबर कॉपी करा</span>
+                                    </button>
                                 </div>
+
+                                <div class="small text-muted mt-2" id="copyFeedback">
+                                    <i class="bi bi-info-circle text-primary me-1"></i> कोणत्याही ॲपने अचूक <strong>₹<span th:text="${job.totalAmount}">2.00</span></strong> पाठवा.
+                                </div>
+                            </div>
+
+                            <!-- HELPFUL GUIDANCE: SECURITY REASONS ERROR PREVENTION -->
+                            <div class="alert alert-warning py-2 px-3 small border-0 rounded-3 mb-3">
+                                <div class="fw-bold mb-1"><i class="bi bi-shield-exclamation text-warning me-1"></i> "Payment Failed for Security Reasons" एरर येत असल्यास:</div>
+                                <div>बँकेच्या सिक्युरिटी नियमांमुळे डायरेक्ट लिंक अडकल्यास, वरील <strong>मोबाईल नंबर (7820939263)</strong> किंवा <strong>UPI ID</strong> कॉपी करा. PhonePe किंवा GPay मध्ये "To Mobile / UPI ID" निवडून थेट ₹<span th:text="${job.totalAmount}">2.00</span> पाठवा.</div>
                             </div>
 
                             <!-- 1-CLICK APP BUTTONS FOR SMARTPHONES -->
                             <div class="mt-3">
                                 <div class="fw-bold text-dark small mb-2">
-                                    <i class="bi bi-phone-vibrate text-primary me-1"></i> मोबाईलवरून थेट १-क्लिकने ॲप उघडा:
+                                    <i class="bi bi-phone-vibrate text-primary me-1"></i> किंवा मोबाईलवरून थेट ॲप उघडा:
                                 </div>
                                 <div class="row g-2">
                                     <div class="col-sm-6">
@@ -237,14 +255,19 @@
                             </div>
                         </div>
 
-                        <!-- SECTION 2: MANDATORY 12-DIGIT UTR SUBMISSION & VERIFICATION -->
-                        <div class="card p-4 border-2 border-warning shadow-sm mb-4" style="background: #fffdf5;">
-                            <div class="d-flex align-items-center gap-2 mb-2 text-warning-emphasis">
-                                <i class="bi bi-shield-check fs-4 text-warning"></i>
-                                <h5 class="fw-bold mb-0 text-dark">पायरी २: पेमेंट पडताळणी (Payment Cross-Verification)</h5>
+                        <!-- SECTION 2: MANDATORY 12-DIGIT UTR SUBMISSION & AUTOMATED VERIFICATION -->
+                        <div class="card p-4 border-2 border-primary shadow-sm mb-4" style="background: #f0f7ff;">
+                            <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
+                                <div class="d-flex align-items-center gap-2 text-primary">
+                                    <i class="bi bi-cpu fs-4"></i>
+                                    <h5 class="fw-bold mb-0 text-dark">पायरी २: स्वयंचलित पडताळणी (Auto Verification)</h5>
+                                </div>
+                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill">
+                                    <i class="bi bi-lightning-charge-fill me-1"></i> त्वरित स्वयंचलित प्रिंट
+                                </span>
                             </div>
                             <p class="small text-muted mb-3">
-                                पेमेंट केल्यावर तुमच्या PhonePe, Google Pay किंवा Paytm ॲपमध्ये मिळणारा <strong>१२ अंकी UPI UTR / Transaction ID</strong> खाली टाका. ऑपरेटर पडताळणीनंतर तुमचे प्रिंट थेट मशिनवरून निघेल:
+                                पेमेंट केल्यावर तुमच्या ॲपमध्ये (PhonePe / GPay) दिसणारा <strong>१२ अंकी UPI UTR / Ref No.</strong> खाली टाका. बँक एसएमएसद्वारे पडताळणी पूर्ण होताच <strong>मशिनवरून प्रिंट आपोआप निघेल (मॅन्युअल क्लिकची गरज नाही):</strong>
                             </p>
 
                             <div class="mb-3">
@@ -310,6 +333,22 @@
                 setTimeout(() => {
                     copyIcon.className = 'bi bi-clipboard';
                     btnText.textContent = 'UPI ID कॉपी करा';
+                }, 3000);
+            });
+        }
+
+        function copyMobileNumber() {
+            const mobile = '7820939263';
+            navigator.clipboard.writeText(mobile).then(() => {
+                const feedback = document.getElementById('copyFeedback');
+                const copyIcon = document.getElementById('copyMobileIcon');
+                const btnText = document.getElementById('copyMobileBtnText');
+                copyIcon.className = 'bi bi-check-lg text-success';
+                btnText.textContent = 'कॉपी झाला!';
+                feedback.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> मोबाईल नंबर (7820939263) कॉपी झाला! PhonePe / GPay वर थेट पाठवा.</span>';
+                setTimeout(() => {
+                    copyIcon.className = 'bi bi-copy';
+                    btnText.textContent = 'नंबर कॉपी करा';
                 }, 3000);
             });
         }
