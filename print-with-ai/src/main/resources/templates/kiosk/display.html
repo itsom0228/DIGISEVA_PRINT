@@ -240,19 +240,53 @@
                             <div class="badge bg-dark border text-light px-3 py-2 mb-2" id="docStats">3 Pages &bull; Black & White</div>
                         </div>
 
-                        <!-- 4. AWAITING PAYMENT STATE -->
+                        <!-- 4. AWAITING PAYMENT & OPERATOR VERIFICATION STATE -->
                         <div id="statePayment" class="d-none">
                             <div class="p-4 bg-warning bg-opacity-25 rounded-circle d-inline-block mb-3 text-warning">
                                 <i class="bi bi-wallet2 display-3"></i>
                             </div>
-                            <h3 class="fw-bold text-white mb-1">Awaiting Payment • देय रक्कम</h3>
-                            <div class="display-5 fw-extrabold text-warning mb-2" id="payAmount">₹10.00</div>
+                            <h3 class="fw-bold text-white mb-1" id="paymentStageHeader">Awaiting Payment • देय रक्कम</h3>
+                            <div class="display-5 fw-extrabold text-warning mb-2" id="payAmount">₹2.00</div>
                             <p class="text-white-50 mb-3" id="payDesc">कृपया मोबाईलवरील PhonePe, GPay किंवा Paytm ने पेमेंट पूर्ण करा...</p>
-                            <div class="d-flex justify-content-center gap-2 mb-2">
+
+                            <!-- Sub-state A: General UPI Apps Badge -->
+                            <div id="payAppsBadges" class="d-flex justify-content-center gap-2 mb-3">
                                 <span class="badge px-3 py-2 text-white" style="background:#5f259f;"><i class="bi bi-phone"></i> PhonePe</span>
                                 <span class="badge px-3 py-2 bg-white text-dark"><i class="bi bi-google text-primary"></i> GPay</span>
                                 <span class="badge px-3 py-2 text-white" style="background:#00b9f5;"><i class="bi bi-wallet2"></i> Paytm</span>
-                                <span class="badge px-3 py-2 bg-success text-white"><i class="bi bi-qr-code"></i> BHIM UPI</span>
+                                <span class="badge px-3 py-2 bg-success text-white"><i class="bi bi-qr-code"></i> BHIM (7820939263@ibl)</span>
+                            </div>
+
+                            <!-- Sub-state B: Operator Verification Card (Appears when UTR is submitted) -->
+                            <div id="operatorVerificationBox" class="d-none p-3 rounded-4 text-start mx-auto mt-2 shadow-lg"
+                                 style="max-width: 580px; background: rgba(15, 23, 42, 0.95); border: 2px solid #f59e0b;">
+                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                    <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill">
+                                        <i class="bi bi-shield-check me-1"></i> ऑपरेटर पडताळणी / Operator Action
+                                    </span>
+                                    <span class="badge bg-secondary font-monospace" id="opOrderRef">PAI-XXXX</span>
+                                </div>
+                                <div class="row g-2 mb-3">
+                                    <div class="col-6">
+                                        <div class="small text-white-50">अपेक्षित रक्कम (Due):</div>
+                                        <div class="fs-4 fw-extrabold text-warning" id="opDueAmount">₹2.00</div>
+                                    </div>
+                                    <div class="col-6">
+                                        <div class="small text-white-50">ग्राहकाचा UPI UTR:</div>
+                                        <div class="fs-5 fw-bold text-info font-monospace" id="opUtrNumber">428412345678</div>
+                                    </div>
+                                </div>
+                                <div class="small text-white-50 mb-3">
+                                    <i class="bi bi-bell-fill text-warning me-1"></i> <strong>दुकानदार / ऑपरेटर:</strong> तुमच्या PhonePe/GPay वर अचूक रक्कम प्राप्त झाली आहे का?
+                                </div>
+                                <div class="d-flex gap-2">
+                                    <button type="button" class="btn btn-success fw-bold flex-grow-1 py-2" id="btnOpApprove" onclick="operatorApprovePayment()">
+                                        <i class="bi bi-check-circle-fill me-1"></i> ✅ रक्कम प्राप्त झाली • प्रिंट करा
+                                    </button>
+                                    <button type="button" class="btn btn-outline-danger fw-bold py-2" id="btnOpReject" onclick="operatorRejectPayment()">
+                                        <i class="bi bi-x-circle me-1"></i> ❌ चुकीची रक्कम (नाकारा)
+                                    </button>
+                                </div>
                             </div>
                         </div>
 
@@ -432,11 +466,29 @@
                     break;
 
                 case 'AWAITING_PAYMENT':
+                case 'PAYMENT_VERIFICATION_PENDING':
                 case 'PRINT_OPTIONS_CONFIRMED':
                     statePayment.classList.remove('d-none');
                     stageBadge.className = 'badge bg-warning text-dark px-3 py-2 rounded-pill';
                     payAmount.textContent = data.totalAmount || '₹0.00';
                     payDesc.textContent = data.stageDescription;
+
+                    const opBox = document.getElementById('operatorVerificationBox');
+                    const opOrderRef = document.getElementById('opOrderRef');
+                    const opDueAmount = document.getElementById('opDueAmount');
+                    const opUtrNumber = document.getElementById('opUtrNumber');
+                    const paymentStageHeader = document.getElementById('paymentStageHeader');
+
+                    if (data.awaitingVerification || data.stage === 'PAYMENT_VERIFICATION_PENDING' || data.customerUtr) {
+                        if (opBox) opBox.classList.remove('d-none');
+                        if (opOrderRef) opOrderRef.textContent = data.orderReference || 'PAI-XXXX';
+                        if (opDueAmount) opDueAmount.textContent = data.totalAmount || '₹0.00';
+                        if (opUtrNumber) opUtrNumber.textContent = data.customerUtr || 'UTR Submitted';
+                        if (paymentStageHeader) paymentStageHeader.textContent = 'पेमेंट पडताळणी प्रलंबित • Payment Verification';
+                    } else {
+                        if (opBox) opBox.classList.add('d-none');
+                        if (paymentStageHeader) paymentStageHeader.textContent = 'Awaiting Payment • देय रक्कम';
+                    }
                     break;
 
                 case 'QUEUED':
@@ -475,6 +527,63 @@
                     stateWaiting.classList.remove('d-none');
                     stageBadge.className = 'badge bg-secondary px-3 py-2 rounded-pill';
                     break;
+            }
+        }
+
+        // Operator Approval & Verification functions
+        async function operatorApprovePayment() {
+            if (!currentOrderToken) {
+                alert('No active order token found.');
+                return;
+            }
+            const btnApprove = document.getElementById('btnOpApprove');
+            if (btnApprove) btnApprove.disabled = true;
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append('trackingToken', currentOrderToken);
+                const resp = await fetch('/print/api/verify-payment', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await resp.json();
+                if (resp.ok && result.success) {
+                    pollKioskStatus();
+                } else {
+                    alert('पडताळणी अयशस्वी: ' + (result.message || 'त्रुटी'));
+                    if (btnApprove) btnApprove.disabled = false;
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
+                if (btnApprove) btnApprove.disabled = false;
+            }
+        }
+
+        async function operatorRejectPayment() {
+            if (!currentOrderToken) {
+                alert('No active order token found.');
+                return;
+            }
+            const reason = prompt('रक्कम का नाकारत आहात? (उदा. ग्राहकाने ₹1 पाठवले, देय ₹2 / चुकीचा UTR):', 'अपूर्ण रक्कम प्राप्त झाली (उदा. ग्राहकाने ₹1 पाठवले, देय ₹2 आहे)');
+            if (!reason) return;
+
+            try {
+                const formData = new URLSearchParams();
+                formData.append('trackingToken', currentOrderToken);
+                formData.append('reason', reason);
+                const resp = await fetch('/print/api/reject-payment', {
+                    method: 'POST',
+                    body: formData
+                });
+                const result = await resp.json();
+                if (resp.ok && result.success) {
+                    alert('पेमेंट नाकारले. प्रिंट थांबवली आहे.');
+                    pollKioskStatus();
+                } else {
+                    alert('त्रुटी: ' + (result.message || 'Error'));
+                }
+            } catch (err) {
+                alert('Network error: ' + err.message);
             }
         }
 

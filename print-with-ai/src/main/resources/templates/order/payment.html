@@ -45,29 +45,6 @@
             background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
             color: #ffffff !important;
         }
-        .qr-wrapper {
-            background: #ffffff;
-            border: 2px dashed #3b82f6;
-            border-radius: 1rem;
-            padding: 1.25rem;
-            display: inline-block;
-            box-shadow: 0 4px 12px rgba(37,99,235,0.08);
-            position: relative;
-        }
-        .qr-badge-ribbon {
-            position: absolute;
-            top: -12px;
-            left: 50%;
-            transform: translateX(-50%);
-            background: #2563eb;
-            color: #fff;
-            font-size: 0.72rem;
-            font-weight: 700;
-            letter-spacing: 0.5px;
-            padding: 2px 12px;
-            border-radius: 20px;
-            box-shadow: 0 2px 6px rgba(37,99,235,0.3);
-        }
         .app-badge-pill {
             font-size: 0.75rem;
             font-weight: 600;
@@ -96,6 +73,12 @@
         .lang-switch-pill:hover:not(.active) {
             background-color: #e2e8f0;
         }
+        .upi-box-highlight {
+            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
+            border: 2px solid #3b82f6;
+            border-radius: 1rem;
+            padding: 1.25rem;
+        }
     </style>
 </head>
 <body>
@@ -110,6 +93,11 @@
                 <div th:if="${errorMessage}" class="alert alert-danger alert-dismissible fade show shadow-sm" role="alert">
                     <i class="bi bi-exclamation-triangle-fill me-2"></i>
                     <span th:text="${errorMessage}">Error</span>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+                <div th:if="${successMessage}" class="alert alert-success alert-dismissible fade show shadow-sm" role="alert">
+                    <i class="bi bi-check-circle-fill me-2"></i>
+                    <span th:text="${successMessage}">Success</span>
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
 
@@ -136,14 +124,14 @@
                     <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom flex-wrap gap-3">
                         <div>
                             <h2 class="fw-bold mb-0 text-slate-900" th:text="#{payment.title}">पेमेंट पुष्टीकरण</h2>
-                            <div class="text-primary fw-semibold small mt-1" th:text="#{payment.subtitle}">PhonePe, Google Pay, Paytm व BHIM द्वारे सुरक्षित पेमेंट</div>
+                            <div class="text-primary fw-semibold small mt-1">PhonePe, Google Pay, Paytm व BHIM द्वारे सुरक्षित UPI पेमेंट</div>
                             <div class="small text-muted mt-1">
-                                <i class="bi bi-shield-lock-fill text-success me-1"></i> <span th:text="#{payment.disclaimer}">PhonePe, Google Pay, Paytm व BHIM द्वारे सुरक्षित पेमेंट</span>
+                                <i class="bi bi-shield-lock-fill text-success me-1"></i> <span>पेमेंटची पडताळणी झाल्यानंतरच प्रिंट स्वयंचलितरीत्या निघेल.</span>
                             </div>
                         </div>
                         <div class="text-end bg-primary-subtle p-3 rounded-4 border border-primary-subtle">
                             <div class="small fw-semibold text-primary text-uppercase" style="letter-spacing: 0.5px;" th:text="#{payment.amount_due}">देय रक्कम / देय राशि / Amount</div>
-                            <div class="fs-1 fw-extrabold text-primary lh-1 mt-1" th:text="'₹' + ${job.totalAmount}">₹10.00</div>
+                            <div class="fs-1 fw-extrabold text-primary lh-1 mt-1" th:text="'₹' + ${job.totalAmount}">₹2.00</div>
                         </div>
                     </div>
 
@@ -170,167 +158,131 @@
                     </div>
 
                     <form th:action="@{/print/payment/{token}(token=${job.trackingToken})}" method="post" id="paymentForm">
-                        
-                        <!-- UPI PAYMENT GATEWAY (PhonePe / GPay / Paytm / BHIM) -->
                         <input type="hidden" name="paymentMode" value="DEMO_UPI">
 
-                        <div class="card p-4 border-2 border-primary shadow-sm mb-4" style="background: linear-gradient(180deg, #f8faff 0%, #ffffff 100%);">
-                            
-                            <div class="d-flex align-items-center justify-content-between mb-3 pb-2 border-bottom flex-wrap gap-2">
+                        <!-- SECTION 1: OFFICIAL UPI ID & 1-CLICK COPY -->
+                        <div class="upi-box-highlight shadow-sm mb-4">
+                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
                                 <div class="d-flex align-items-center gap-2">
-                                    <i class="bi bi-qr-code-scan text-primary fs-4"></i>
-                                    <div>
-                                        <h5 class="fw-bold text-dark mb-0">UPI पेमेंट (PhonePe / GPay / Paytm / BHIM)</h5>
-                                        <div class="small text-muted">स्कॅन करून किंवा थेट ॲपवरून ₹<span th:text="${job.totalAmount}"></span> भरा</div>
-                                    </div>
+                                    <i class="bi bi-wallet2 text-primary fs-4"></i>
+                                    <span class="fw-bold text-dark fs-6">अधिकृत UPI पेमेंट तपशील (Official UPI Details)</span>
                                 </div>
-                                <div class="d-flex gap-1 flex-wrap">
+                                <div class="d-flex gap-1">
                                     <span class="app-badge-pill bg-purple text-white" style="background:#5f259f;"><i class="bi bi-phone"></i> PhonePe</span>
                                     <span class="app-badge-pill bg-white text-dark border"><i class="bi bi-google text-primary"></i> GPay</span>
                                     <span class="app-badge-pill text-white" style="background:#00b9f5;"><i class="bi bi-wallet2"></i> Paytm</span>
-                                    <span class="app-badge-pill bg-success text-white"><i class="bi bi-shield-check"></i> 100% Safe</span>
+                                    <span class="app-badge-pill bg-success text-white"><i class="bi bi-shield-check"></i> Verified</span>
                                 </div>
                             </div>
 
-                            <div class="row g-4 align-items-center">
-                                
-                                <!-- LEFT: Paytm Merchant Card & Auto Amount QR -->
-                                <div class="col-md-5 text-center">
-                                    <div class="mb-2">
-                                        <span class="badge bg-success-subtle text-success border border-success-subtle px-3 py-1 rounded-pill small fw-bold">
-                                            <i class="bi bi-patch-check-fill text-primary me-1"></i> <span th:text="${upiPayeeName}">Omkar Vilas Sarpane</span>
-                                        </span>
-                                    </div>
-
-                                    <!-- Switchable View: Official Paytm QR Card or Auto-Bill QR -->
-                                    <ul class="nav nav-pills nav-fill mb-2 p-1 bg-light rounded-pill border" id="qrTabs" role="tablist">
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link active py-1 px-2 rounded-pill small fw-bold" id="auto-qr-tab" data-bs-toggle="tab" data-bs-target="#auto-qr-pane" type="button" role="tab">
-                                                <i class="bi bi-qr-code me-1"></i> Auto-Bill QR
-                                            </button>
-                                        </li>
-                                        <li class="nav-item" role="presentation">
-                                            <button class="nav-link py-1 px-2 rounded-pill small fw-bold" id="paytm-card-tab" data-bs-toggle="tab" data-bs-target="#paytm-card-pane" type="button" role="tab">
-                                                <i class="bi bi-wallet2 me-1"></i> Paytm Card
-                                            </button>
-                                        </li>
-                                    </ul>
-
-                                    <div class="tab-content" id="qrTabsContent">
-                                        <!-- Tab 1: Live Dynamic QR (Exact order amount pre-filled) -->
-                                        <div class="tab-pane fade show active" id="auto-qr-pane" role="tabpanel">
-                                            <div class="qr-wrapper mt-1">
-                                                <div class="qr-badge-ribbon">AUTO-AMOUNT QR (₹<span th:text="${job.totalAmount}">10.00</span>)</div>
-                                                <img th:src="'data:image/png;base64,' + ${upiQrBase64}" 
-                                                     alt="Paytm PhonePe GPay UPI QR" 
-                                                     class="img-fluid rounded"
-                                                     style="width: 210px; height: 210px; object-fit: contain;">
-                                                <div class="mt-2 fw-bold text-dark fs-6">
-                                                    ₹<span th:text="${job.totalAmount}"></span> स्कॅन करा आणि भरा
-                                                </div>
-                                            </div>
-                                        </div>
-
-                                        <!-- Tab 2: User's Official Paytm Merchant QR Card -->
-                                        <div class="tab-pane fade" id="paytm-card-pane" role="tabpanel">
-                                            <div class="p-2 bg-white rounded-3 border shadow-sm d-inline-block mt-1">
-                                                <img th:src="@{/images/omkar_paytm_qr_card.png}" 
-                                                     alt="Omkar Vilas Sarpane Paytm QR" 
-                                                     class="img-fluid rounded-3"
-                                                     style="max-width: 210px; height: auto;">
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <!-- Verified Payee & Copy UPI ID Button -->
-                                    <div class="mt-3">
-                                        <div class="input-group input-group-sm justify-content-center">
-                                            <span class="input-group-text bg-white text-dark small fw-bold"><i class="bi bi-wallet2 text-info me-1"></i> UPI ID:</span>
-                                            <input type="text" class="form-control form-control-sm text-center fw-bold text-primary font-monospace" id="upiVpaField" th:value="${upiVpa}" readonly style="max-width: 180px;">
-                                            <button class="btn btn-outline-primary" type="button" onclick="copyUpiId()" title="Copy UPI ID">
-                                                <i class="bi bi-clipboard" id="copyIcon"></i>
-                                            </button>
-                                        </div>
-                                        <div class="small text-muted mt-1" id="copyFeedback">
-                                            <i class="bi bi-shield-check text-success me-1"></i><span class="fw-semibold text-dark" th:text="${upiPayeeName}">Omkar Vilas Sarpane</span> (<span th:text="${upiVpa}">7820939263@ptyes</span>)
-                                        </div>
-                                    </div>
+                            <div class="bg-white p-3 rounded-3 border text-center my-3">
+                                <div class="small text-muted fw-semibold text-uppercase mb-1">
+                                    <i class="bi bi-patch-check-fill text-primary me-1"></i> पेयीचे नाव (Payee): <strong class="text-dark" th:text="${upiPayeeName}">Omkar Vilas Sarpane</strong>
                                 </div>
+                                <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap mt-2">
+                                    <span class="badge bg-light text-dark border px-2 py-1 small">UPI ID</span>
+                                    <span class="fs-3 fw-extrabold text-primary font-monospace" id="upiVpaField" th:text="${upiVpa}">7820939263@ibl</span>
+                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" type="button" onclick="copyUpiId()" id="btnCopyUpi">
+                                        <i class="bi bi-clipboard me-1" id="copyIcon"></i> <span id="copyBtnText">UPI ID कॉपी करा</span>
+                                    </button>
+                                </div>
+                                <div class="small text-muted mt-2" id="copyFeedback">
+                                    <i class="bi bi-info-circle text-primary me-1"></i> वरील UPI ID वर कोणत्याही ॲपने अचूक <strong>₹<span th:text="${job.totalAmount}">2.00</span></strong> पाठवा.
+                                </div>
+                            </div>
 
-                                <!-- RIGHT: 1-Tap Mobile Buttons (For Smartphone Users Opening directly in Apps) -->
-                                <div class="col-md-7">
-                                    <h6 class="fw-bold text-slate-800 mb-2">
-                                        <i class="bi bi-phone-vibrate text-primary me-1"></i> <span th:text="#{payment.mobile_apps_heading}">मोबाईलवरून थेट ॲप उघडा (१-क्लिक):</span>
-                                    </h6>
-                                    <p class="small text-muted mb-3" th:text="#{payment.mobile_apps_subtext}">
-                                        खालीलपैकी कोणत्याही ॲपवर क्लिक करा. ॲप थेट अचूक रकमेसह उघडेल:
-                                    </p>
-
-                                    <div class="d-grid gap-2 mb-3">
-                                        
-                                        <!-- Paytm Direct Intent (Primary) -->
-                                        <a th:href="${paytmPayload}" class="upi-app-btn btn-paytm">
-                                            <span class="d-flex align-items-center gap-2">
-                                                <i class="bi bi-wallet-fill fs-5"></i>
-                                                <span>Paytm ने उघडा व भरा (Omkar Vilas Sarpane)</span>
-                                            </span>
-                                            <span class="badge bg-white text-primary px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹10.00</span>
-                                        </a>
-
-                                        <!-- PhonePe Direct Intent -->
+                            <!-- 1-CLICK APP BUTTONS FOR SMARTPHONES -->
+                            <div class="mt-3">
+                                <div class="fw-bold text-dark small mb-2">
+                                    <i class="bi bi-phone-vibrate text-primary me-1"></i> मोबाईलवरून थेट १-क्लिकने ॲप उघडा:
+                                </div>
+                                <div class="row g-2">
+                                    <div class="col-sm-6">
                                         <a th:href="${phonepePayload}" class="upi-app-btn btn-phonepe">
                                             <span class="d-flex align-items-center gap-2">
                                                 <i class="bi bi-phone-fill fs-5"></i>
-                                                <span th:text="#{payment.phonepe_btn}">PhonePe ने उघडा व भरा</span>
+                                                <span>PhonePe ने उघडा</span>
                                             </span>
-                                            <span class="badge bg-white text-dark px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹10.00</span>
+                                            <span class="badge bg-white text-dark px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹2.00</span>
                                         </a>
-
-                                        <!-- Google Pay Direct Intent -->
+                                    </div>
+                                    <div class="col-sm-6">
                                         <a th:href="${gpayPayload}" class="upi-app-btn btn-gpay">
                                             <span class="d-flex align-items-center gap-2">
                                                 <i class="bi bi-google text-primary fs-5"></i>
-                                                <span class="text-dark" th:text="#{payment.gpay_btn}">Google Pay (GPay) ने उघडा</span>
+                                                <span class="text-dark">Google Pay (GPay) ने उघडा</span>
                                             </span>
-                                            <span class="badge bg-primary text-white px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹10.00</span>
+                                            <span class="badge bg-primary text-white px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹2.00</span>
                                         </a>
-
-                                        <!-- Universal Any UPI Link -->
+                                    </div>
+                                    <div class="col-sm-6">
+                                        <a th:href="${paytmPayload}" class="upi-app-btn btn-paytm">
+                                            <span class="d-flex align-items-center gap-2">
+                                                <i class="bi bi-wallet-fill fs-5"></i>
+                                                <span>Paytm ने उघडा</span>
+                                            </span>
+                                            <span class="badge bg-white text-primary px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹2.00</span>
+                                        </a>
+                                    </div>
+                                    <div class="col-sm-6">
                                         <a th:href="${upiPayload}" class="upi-app-btn btn-any-upi">
                                             <span class="d-flex align-items-center gap-2">
                                                 <i class="bi bi-arrow-up-right-circle-fill fs-5"></i>
-                                                <span th:text="#{payment.bhim_btn}">इतर UPI ॲपने भरा (BHIM / सर्व ॲप्स)</span>
+                                                <span>BHIM / सर्व UPI ॲप्स</span>
                                             </span>
-                                            <span class="badge bg-white text-success px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹10.00</span>
+                                            <span class="badge bg-white text-success px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹2.00</span>
                                         </a>
-
                                     </div>
-
-                                    <!-- Optional UTR Reference Input -->
-                                    <div class="p-2 bg-light rounded-3 border">
-                                        <label class="form-label small text-muted mb-1 fw-semibold">
-                                            <i class="bi bi-check-all text-success me-1"></i> <span th:text="#{payment.utr_label}">UPI ट्रान्झॅक्शन आयडी / UTR (पर्यायी):</span>
-                                        </label>
-                                        <input type="text" 
-                                               class="form-control form-control-sm" 
-                                               name="simulatedUpiId" 
-                                               id="simulatedUpiId" 
-                                               th:placeholder="#{payment.utr_placeholder}" 
-                                               th:value="'UPI-SUCCESS-' + ${job.publicReference}">
-                                    </div>
-
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- SECTION 2: MANDATORY 12-DIGIT UTR SUBMISSION & VERIFICATION -->
+                        <div class="card p-4 border-2 border-warning shadow-sm mb-4" style="background: #fffdf5;">
+                            <div class="d-flex align-items-center gap-2 mb-2 text-warning-emphasis">
+                                <i class="bi bi-shield-check fs-4 text-warning"></i>
+                                <h5 class="fw-bold mb-0 text-dark">पायरी २: पेमेंट पडताळणी (Payment Cross-Verification)</h5>
+                            </div>
+                            <p class="small text-muted mb-3">
+                                पेमेंट केल्यावर तुमच्या PhonePe, Google Pay किंवा Paytm ॲपमध्ये मिळणारा <strong>१२ अंकी UPI UTR / Transaction ID</strong> खाली टाका. ऑपरेटर पडताळणीनंतर तुमचे प्रिंट थेट मशिनवरून निघेल:
+                            </p>
+
+                            <div class="mb-3">
+                                <label for="utrNumber" class="form-label fw-bold text-dark mb-1">
+                                    <i class="bi bi-receipt text-primary me-1"></i> १२ अंकी UPI UTR / Reference No. <span class="text-danger">*</span>:
+                                </label>
+                                <div class="input-group input-group-lg shadow-sm">
+                                    <span class="input-group-text bg-white text-primary fw-bold"><i class="bi bi-123 fs-4"></i></span>
+                                    <input type="text" 
+                                           class="form-control form-control-lg fw-bold font-monospace" 
+                                           name="utrNumber" 
+                                           id="utrNumber" 
+                                           required
+                                           minlength="6"
+                                           maxlength="24"
+                                           pattern="[0-9A-Za-z]{6,24}"
+                                           placeholder="उदा. 428412345678 (12-Digit UTR)" 
+                                           autocomplete="off">
+                                </div>
+                                <div class="form-text text-muted small mt-1">
+                                    <i class="bi bi-info-circle text-info me-1"></i> पेमेंट पावतीमध्ये "UPI Ref No." किंवा "UTR" असे १२ आकडे असतात.
+                                </div>
+                            </div>
+
+                            <div class="p-2 bg-white rounded border small text-muted">
+                                <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> <strong>महत्त्वाची सूचना:</strong> 
+                                कृपया अचूक देय रक्कम (<strong>₹<span th:text="${job.totalAmount}">2.00</span></strong>) भरा. अपूर्ण पेमेंट (उदा. ₹२ ऐवजी ₹१) भरल्यास पडताळणी अयशस्वी होईल आणि प्रिंट निघणार नाही.
                             </div>
                         </div>
 
                         <!-- SUBMIT BUTTON -->
                         <div class="d-grid gap-2">
                             <button type="submit" class="btn btn-lg btn-success shadow-lg py-3 fw-bold fs-5" id="btnSubmitPayment">
-                                <i class="bi bi-printer-fill me-2"></i>
-                                <span th:text="#{payment.pay_btn}">पेमेंट केले आहे • त्वरित प्रिंट सुरू करा</span>
+                                <i class="bi bi-send-check-fill me-2"></i>
+                                <span>मी पेमेंट केले आहे • UTR पडताळणीसाठी पाठवा</span>
                             </button>
                             <div class="text-center small text-muted mt-2">
-                                <i class="bi bi-info-circle me-1"></i> <span th:text="#{payment.auto_note}">पेमेंटची पुष्टी करताच डॉक्युमेंट थेट कनेक्टेड प्रिंटरवर स्पूल होईल.</span>
+                                <i class="bi bi-lock-fill text-success me-1"></i> UTR सबमिट केल्यावर सिस्टीम व ऑपरेटर पडताळणी करेल आणि कनेक्टेड प्रिंटरवर प्रिंट सुरू होईल.
                             </div>
                         </div>
 
@@ -347,33 +299,35 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script th:inline="javascript">
         function copyUpiId() {
-            const upiInput = document.getElementById('upiVpaField');
-            const msgCopied = /*[[#{payment.copied}]]*/ 'UPI ID कॉपी केला!';
-            const msgCamera = /*[[#{payment.scan_camera_hint}]]*/ 'लॅपटॉपवरून मोबाईलच्या कॅमेऱ्याने QR स्कॅन करा';
-            if (upiInput) {
-                navigator.clipboard.writeText(upiInput.value).then(() => {
-                    const feedback = document.getElementById('copyFeedback');
-                    const copyIcon = document.getElementById('copyIcon');
-                    copyIcon.className = 'bi bi-check-lg text-success';
-                    feedback.textContent = msgCopied;
-                    feedback.className = 'small text-success mt-1 fw-bold';
-                    setTimeout(() => {
-                        copyIcon.className = 'bi bi-clipboard';
-                        feedback.textContent = msgCamera;
-                        feedback.className = 'small text-muted mt-1';
-                    }, 3000);
-                });
-            }
+            const upiId = /*[[${upiVpa}]]*/ '7820939263@ibl';
+            navigator.clipboard.writeText(upiId).then(() => {
+                const feedback = document.getElementById('copyFeedback');
+                const copyIcon = document.getElementById('copyIcon');
+                const btnText = document.getElementById('copyBtnText');
+                copyIcon.className = 'bi bi-check-lg text-success';
+                btnText.textContent = 'कॉपी झाला!';
+                feedback.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> UPI ID कॉपी झाला! आता तुमच्या पेमेंट ॲपमध्ये पेस्ट करा.</span>';
+                setTimeout(() => {
+                    copyIcon.className = 'bi bi-clipboard';
+                    btnText.textContent = 'UPI ID कॉपी करा';
+                }, 3000);
+            });
         }
 
-        // Show spinner on submit
+        // Validate form on submit
         const form = document.getElementById('paymentForm');
         const submitBtn = document.getElementById('btnSubmitPayment');
-        const msgSpooling = /*[[#{payment.spooling}]]*/ 'प्रिंटरवर पाठवत आहे...';
+        const utrInput = document.getElementById('utrNumber');
         if (form && submitBtn) {
-            form.addEventListener('submit', function() {
+            form.addEventListener('submit', function(e) {
+                if (utrInput && utrInput.value.trim().length < 6) {
+                    e.preventDefault();
+                    alert('कृपया पेमेंट ॲपमधील किमान ६ ते १२ अंकी वैध UTR / ट्रान्झॅक्शन आयडी प्रविष्ट करा.');
+                    utrInput.focus();
+                    return;
+                }
                 submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> ' + msgSpooling;
+                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> पडताळणीसाठी पाठवत आहे...';
             });
         }
     </script>

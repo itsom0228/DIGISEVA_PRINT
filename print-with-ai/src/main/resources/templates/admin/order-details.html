@@ -22,8 +22,20 @@
                 </a>
                 <h3 class="fw-bold mb-0">Order: <span th:text="${job.publicReference}">PAI-2026-XXXX</span></h3>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 flex-wrap">
                 <!-- Administrative Actions -->
+                <form th:action="@{/admin/order/{ref}/verify-payment(ref=${job.publicReference})}" method="post" class="d-inline"
+                      th:if="${job.paymentStatus.name() != 'DEMO_SUCCESS'}">
+                    <button type="submit" class="btn btn-success btn-sm fw-bold" onclick="return confirm('Verify payment of ₹' + /*[[${job.totalAmount}]]*/ '2.00' + ' and send to printer?');">
+                        <i class="bi bi-check-circle-fill me-1"></i> Verify & Print (₹<span th:text="${job.totalAmount}">2.00</span>)
+                    </button>
+                </form>
+                <form th:action="@{/admin/order/{ref}/reject-payment(ref=${job.publicReference})}" method="post" class="d-inline"
+                      th:if="${job.paymentStatus.name() != 'DEMO_SUCCESS' and job.paymentStatus.name() != 'DEMO_FAILED'}">
+                    <button type="submit" class="btn btn-outline-danger btn-sm" onclick="return confirm('Reject this payment (amount mismatch / invalid)?');">
+                        <i class="bi bi-x-circle me-1"></i> Reject Payment
+                    </button>
+                </form>
                 <form th:action="@{/admin/order/{ref}/retry(ref=${job.publicReference})}" method="post" class="d-inline"
                       th:if="${job.paymentStatus.name() == 'DEMO_SUCCESS'}">
                     <button type="submit" class="btn btn-warning btn-sm" onclick="return confirm('Trigger simulated retry for this job?');">

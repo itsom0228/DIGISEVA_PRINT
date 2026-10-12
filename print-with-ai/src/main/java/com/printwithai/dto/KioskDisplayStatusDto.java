@@ -28,6 +28,8 @@ public class KioskDisplayStatusDto {
     private String failureReason;
     private boolean simulated = true;
     private String timestamp;
+    private String customerUtr;
+    private boolean awaitingVerification = false;
 
     public KioskDisplayStatusDto() {}
 
@@ -97,4 +99,10 @@ public class KioskDisplayStatusDto {
 
     public String getTimestamp() { return timestamp; }
     public void setTimestamp(String timestamp) { this.timestamp = timestamp; }
+
+    public String getCustomerUtr() { return customerUtr; }
+    public void setCustomerUtr(String customerUtr) { this.customerUtr = customerUtr; }
+
+    public boolean isAwaitingVerification() { return awaitingVerification; }
+    public void setAwaitingVerification(boolean awaitingVerification) { this.awaitingVerification = awaitingVerification; }
 }

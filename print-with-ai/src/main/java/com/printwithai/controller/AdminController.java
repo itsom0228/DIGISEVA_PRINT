@@ -18,6 +18,7 @@ import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 import com.printwithai.entity.Kiosk;
 import com.printwithai.repository.OfficeCategoryRepository;
+import com.printwithai.service.PaymentService;
 
 @Controller
 @RequestMapping("/admin")
@@ -28,18 +29,21 @@ public class AdminController {
     private final QrCodeService qrCodeService;
     private final FileCleanupService fileCleanupService;
     private final OfficeCategoryRepository officeCategoryRepository;
+    private final PaymentService paymentService;
 
     public AdminController(
             PrintJobService printJobService,
             KioskService kioskService,
             QrCodeService qrCodeService,
             FileCleanupService fileCleanupService,
-            OfficeCategoryRepository officeCategoryRepository) {
+            OfficeCategoryRepository officeCategoryRepository,
+            PaymentService paymentService) {
         this.printJobService = printJobService;
         this.kioskService = kioskService;
         this.qrCodeService = qrCodeService;
         this.fileCleanupService = fileCleanupService;
         this.officeCategoryRepository = officeCategoryRepository;
+        this.paymentService = paymentService;
     }
 
     @GetMapping("/login")
@@ -106,6 +110,38 @@ public class AdminController {
             redirectAttributes.addFlashAttribute("successMessage", "Order " + publicReference + " cancelled successfully.");
         } catch (Exception e) {
             redirectAttributes.addFlashAttribute("errorMessage", "Could not cancel order: " + e.getMessage());
+        }
+        return "redirect:/admin/order/" + publicReference;
+    }
+
+    @PostMapping("/order/{publicReference}/verify-payment")
+    public String adminVerifyPayment(@PathVariable("publicReference") String publicReference,
+                                     @RequestParam(value = "receivedAmount", required = false) java.math.BigDecimal receivedAmount,
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            PrintJob job = printJobService.getOrderByPublicReference(publicReference);
+            java.math.BigDecimal amount = (receivedAmount != null && receivedAmount.compareTo(java.math.BigDecimal.ZERO) > 0)
+                    ? receivedAmount
+                    : job.getTotalAmount();
+            paymentService.verifyAndApprovePayment(job.getTrackingToken(), amount, "Admin Portal");
+            redirectAttributes.addFlashAttribute("successMessage", "Payment of ₹" + amount + " verified! Order dispatched to printer queue.");
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Payment verification failed: " + e.getMessage());
+        }
+        return "redirect:/admin/order/" + publicReference;
+    }
+
+    @PostMapping("/order/{publicReference}/reject-payment")
+    public String adminRejectPayment(@PathVariable("publicReference") String publicReference,
+                                     @RequestParam(value = "reason", required = false) String reason,
+                                     RedirectAttributes redirectAttributes) {
+        try {
+            PrintJob job = printJobService.getOrderByPublicReference(publicReference);
+            String finalReason = (reason != null && !reason.isBlank()) ? reason : "Admin rejected payment (Amount mismatch or invalid UTR)";
+            paymentService.rejectPayment(job.getTrackingToken(), finalReason);
+            redirectAttributes.addFlashAttribute("successMessage", "Payment rejected and print cancelled for order " + publicReference);
+        } catch (Exception e) {
+            redirectAttributes.addFlashAttribute("errorMessage", "Could not reject payment: " + e.getMessage());
         }
         return "redirect:/admin/order/" + publicReference;
     }

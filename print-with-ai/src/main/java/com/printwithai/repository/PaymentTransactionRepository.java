@@ -11,5 +11,7 @@ import java.util.Optional;
 @Repository
 public interface PaymentTransactionRepository extends JpaRepository<PaymentTransaction, Long> {
     Optional<PaymentTransaction> findByTransactionReference(String transactionReference);
+    boolean existsByTransactionReference(String transactionReference);
     List<PaymentTransaction> findByPrintJobOrderByCreatedAtDesc(PrintJob printJob);
+    Optional<PaymentTransaction> findFirstByPrintJobOrderByCreatedAtDesc(PrintJob printJob);
 }

@@ -43,6 +43,7 @@ public class PrintJobService {
     private final PricingService pricingService;
     private final PrinterService printerService;
     private final KioskLogRepository kioskLogRepository;
+    private final com.printwithai.repository.PaymentTransactionRepository paymentTransactionRepository;
 
     public PrintJobService(
             PrintJobRepository printJobRepository,
@@ -51,7 +52,8 @@ public class PrintJobService {
             DocumentAssistantService documentAssistantService,
             PricingService pricingService,
             PrinterService printerService,
-            KioskLogRepository kioskLogRepository) {
+            KioskLogRepository kioskLogRepository,
+            com.printwithai.repository.PaymentTransactionRepository paymentTransactionRepository) {
         this.printJobRepository = printJobRepository;
         this.kioskService = kioskService;
         this.storageService = storageService;
@@ -59,6 +61,7 @@ public class PrintJobService {
         this.pricingService = pricingService;
         this.printerService = printerService;
         this.kioskLogRepository = kioskLogRepository;
+        this.paymentTransactionRepository = paymentTransactionRepository;
     }
 
     @Transactional
@@ -307,8 +310,18 @@ public class PrintJobService {
                         "Demo payment confirmed! Job queued in printer buffer...", 65);
             } else if (status == PrintJobStatus.AWAITING_PAYMENT) {
                 showJob = true;
-                populateJobInDisplayDto(dto, job, "AWAITING_PAYMENT", "Awaiting Demo Payment",
-                        "Print options confirmed. Please complete the demo payment on your smartphone.", 45);
+                java.util.Optional<com.printwithai.entity.PaymentTransaction> txnOpt =
+                        paymentTransactionRepository.findFirstByPrintJobOrderByCreatedAtDesc(job);
+                if (txnOpt.isPresent() && txnOpt.get().getTransactionReference() != null && !txnOpt.get().getTransactionReference().isBlank()) {
+                    String utr = txnOpt.get().getTransactionReference();
+                    populateJobInDisplayDto(dto, job, "PAYMENT_VERIFICATION_PENDING", "Payment Verification Pending • पेमेंट पडताळणी",
+                            "Customer submitted UTR: " + utr + ". Awaiting operator verification of ₹" + job.getTotalAmount().toPlainString(), 50);
+                    dto.setCustomerUtr(utr);
+                    dto.setAwaitingVerification(true);
+                } else {
+                    populateJobInDisplayDto(dto, job, "AWAITING_PAYMENT", "Awaiting Payment • देय रक्कम",
+                            "Print options confirmed. Please complete the payment on your smartphone.", 45);
+                }
             } else if (status == PrintJobStatus.CREATED) {
                 showJob = true;
                 if (job.getCreatedAt() != null && job.getCreatedAt().isAfter(now.minusSeconds(4))) {
