@@ -310,18 +310,9 @@ public class PrintJobService {
                         "Demo payment confirmed! Job queued in printer buffer...", 65);
             } else if (status == PrintJobStatus.AWAITING_PAYMENT) {
                 showJob = true;
-                java.util.Optional<com.printwithai.entity.PaymentTransaction> txnOpt =
-                        paymentTransactionRepository.findFirstByPrintJobOrderByCreatedAtDesc(job);
-                if (txnOpt.isPresent() && txnOpt.get().getTransactionReference() != null && !txnOpt.get().getTransactionReference().isBlank()) {
-                    String utr = txnOpt.get().getTransactionReference();
-                    populateJobInDisplayDto(dto, job, "PAYMENT_VERIFICATION_PENDING", "Payment Verification Pending • पेमेंट पडताळणी",
-                            "Customer submitted UTR: " + utr + ". Awaiting operator verification of ₹" + job.getTotalAmount().toPlainString(), 50);
-                    dto.setCustomerUtr(utr);
-                    dto.setAwaitingVerification(true);
-                } else {
-                    populateJobInDisplayDto(dto, job, "AWAITING_PAYMENT", "Awaiting Payment • देय रक्कम",
-                            "Print options confirmed. Please complete the payment on your smartphone.", 45);
-                }
+                populateJobInDisplayDto(dto, job, "AWAITING_PAYMENT", "Awaiting Payment • देय रक्कम",
+                        "Razorpay / UPI payment in progress on customer phone. (₹" + job.getTotalAmount().toPlainString() + ")", 45);
+                dto.setAwaitingVerification(false);
             } else if (status == PrintJobStatus.CREATED) {
                 showJob = true;
                 if (job.getCreatedAt() != null && job.getCreatedAt().isAfter(now.minusSeconds(4))) {

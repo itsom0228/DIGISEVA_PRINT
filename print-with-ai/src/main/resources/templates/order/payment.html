@@ -7,81 +7,42 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link th:href="@{/css/style.css}" rel="stylesheet">
+    <!-- Official Razorpay Checkout Script -->
+    <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
     <style>
-        .upi-app-btn {
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            padding: 0.9rem 1.2rem;
+        .razorpay-card {
+            background: linear-gradient(135deg, #f0f7ff 0%, #ffffff 100%);
+            border: 2px solid #2563eb;
+            border-radius: 1.25rem;
+            box-shadow: 0 10px 25px rgba(37, 99, 235, 0.1);
+        }
+        .btn-razorpay-main {
+            background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+            color: #ffffff !important;
+            padding: 1.1rem;
+            font-size: 1.25rem;
+            font-weight: 700;
             border-radius: 0.85rem;
-            text-decoration: none;
-            font-weight: 600;
-            font-size: 0.95rem;
-            transition: all 0.2s ease;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.06);
-            border: 1px solid transparent;
+            box-shadow: 0 6px 20px rgba(37, 99, 235, 0.35);
+            transition: all 0.25s ease;
+            border: none;
         }
-        .upi-app-btn:hover {
+        .btn-razorpay-main:hover {
             transform: translateY(-2px);
-            box-shadow: 0 6px 14px rgba(0,0,0,0.12);
-        }
-        .btn-phonepe {
-            background: linear-gradient(135deg, #5f259f 0%, #4a1580 100%);
-            color: #ffffff !important;
-        }
-        .btn-gpay {
-            background: #ffffff;
-            color: #1f1f1f !important;
-            border-color: #dadce0;
-        }
-        .btn-gpay:hover {
-            border-color: #4285f4;
-        }
-        .btn-paytm {
-            background: linear-gradient(135deg, #00b9f5 0%, #008ac9 100%);
-            color: #ffffff !important;
-        }
-        .btn-any-upi {
-            background: linear-gradient(135deg, #0f766e 0%, #0d9488 100%);
-            color: #ffffff !important;
+            box-shadow: 0 10px 26px rgba(37, 99, 235, 0.45);
         }
         .app-badge-pill {
             font-size: 0.75rem;
             font-weight: 600;
-            padding: 0.3rem 0.65rem;
+            padding: 0.35rem 0.75rem;
             border-radius: 2rem;
             display: inline-flex;
             align-items: center;
             gap: 4px;
         }
-        .lang-switch-pill {
-            font-size: 0.8rem;
-            font-weight: 600;
-            padding: 0.25rem 0.65rem;
-            border-radius: 2rem;
-            text-decoration: none;
-            transition: all 0.2s ease;
-        }
-        .lang-switch-pill.active {
-            background-color: #2563eb;
-            color: #fff;
-        }
-        .lang-switch-pill:not(.active) {
-            background-color: #f1f5f9;
-            color: #475569;
-        }
-        .lang-switch-pill:hover:not(.active) {
-            background-color: #e2e8f0;
-        }
-        .upi-box-highlight {
-            background: linear-gradient(135deg, #eff6ff 0%, #ffffff 100%);
-            border: 2px solid #3b82f6;
-            border-radius: 1rem;
-            padding: 1.25rem;
-        }
     </style>
 </head>
-<body>
+<body class="bg-light">
 
     <div th:replace="~{fragments/navbar :: navbar}"></div>
 
@@ -101,36 +62,22 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
 
-                <!-- Main Glass Card -->
-                <div class="glass-card p-4 p-md-5">
-                    
-                    <!-- Top Language Switcher Bar -->
-                    <div class="d-flex justify-content-between align-items-center mb-3 pb-2 border-bottom flex-wrap gap-2">
-                        <div class="d-flex align-items-center gap-2">
-                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-2 py-1 rounded-pill" th:text="'ORDER: ' + ${job.publicReference}">PAI-2026-XXXX</span>
-                            <span class="badge bg-light text-secondary border px-2 py-1 rounded-pill">
-                                <i class="bi bi-geo-alt-fill text-danger me-1"></i><span th:text="${job.kioskName}">Kiosk</span>
-                            </span>
-                        </div>
-                        <div class="d-flex align-items-center gap-1">
-                            <span class="small text-muted me-1"><i class="bi bi-translate"></i> भाषा / Language:</span>
-                            <a th:href="@{/print/payment/{token}(token=${job.trackingToken}, lang='mr')}" class="lang-switch-pill" th:classappend="${#locale.language == 'mr' ? 'active' : ''}">मराठी</a>
-                            <a th:href="@{/print/payment/{token}(token=${job.trackingToken}, lang='hi')}" class="lang-switch-pill" th:classappend="${#locale.language == 'hi' ? 'active' : ''}">हिंदी</a>
-                            <a th:href="@{/print/payment/{token}(token=${job.trackingToken}, lang='en')}" class="lang-switch-pill" th:classappend="${#locale.language == 'en' ? 'active' : ''}">English</a>
-                        </div>
-                    </div>
+                <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
 
                     <!-- Header with Order Ref & Live Amount Due -->
                     <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom flex-wrap gap-3">
                         <div>
+                            <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill mb-2">
+                                <i class="bi bi-lightning-charge-fill me-1"></i> 100% Automated Self-Service
+                            </span>
                             <h2 class="fw-bold mb-0 text-slate-900" th:text="#{payment.title}">पेमेंट पुष्टीकरण</h2>
-                            <div class="text-primary fw-semibold small mt-1">PhonePe, Google Pay, Paytm व BHIM द्वारे सुरक्षित UPI पेमेंट</div>
-                            <div class="small text-muted mt-1">
-                                <i class="bi bi-shield-lock-fill text-success me-1"></i> <span>पेमेंटची पडताळणी झाल्यानंतरच प्रिंट स्वयंचलितरीत्या निघेल.</span>
+                            <div class="text-muted small mt-1">
+                                <i class="bi bi-shield-check text-success me-1"></i> 
+                                <span>पेमेंट पूर्ण होताच ऑपरेटरच्या हस्तक्षेपाशिवाय प्रिंटरवरून कागद आपोआप निघेल.</span>
                             </div>
                         </div>
                         <div class="text-end bg-primary-subtle p-3 rounded-4 border border-primary-subtle">
-                            <div class="small fw-semibold text-primary text-uppercase" style="letter-spacing: 0.5px;" th:text="#{payment.amount_due}">देय रक्कम / देय राशि / Amount</div>
+                            <div class="small fw-semibold text-primary text-uppercase" style="letter-spacing: 0.5px;" th:text="#{payment.amount_due}">देय रक्कम / Amount</div>
                             <div class="fs-1 fw-extrabold text-primary lh-1 mt-1" th:text="'₹' + ${job.totalAmount}">₹2.00</div>
                         </div>
                     </div>
@@ -157,159 +104,64 @@
                         </div>
                     </div>
 
-                    <form th:action="@{/print/payment/{token}(token=${job.trackingToken})}" method="post" id="paymentForm">
-                        <input type="hidden" name="paymentMode" value="DEMO_UPI">
+                    <!-- Processing Overlay (Visible during auto-verification) -->
+                    <div id="processingCard" class="d-none text-center p-5 mb-4 rounded-4" style="background:#f8fafc; border:2px dashed #2563eb;">
+                        <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
+                        <h4 class="fw-bold text-dark" id="processingStatusText">पेमेंट पडताळणी सुरू आहे...</h4>
+                        <p class="text-muted small mb-0">कृपया प्रतीक्षा करा, तुमचे दस्तऐवज थेट प्रिंटरकडे पाठवले जात आहे.</p>
+                    </div>
 
-                        <!-- SECTION 1: OFFICIAL UPI ID & 1-CLICK COPY -->
-                        <div class="upi-box-highlight shadow-sm mb-4">
-                            <div class="d-flex justify-content-between align-items-center mb-2 flex-wrap gap-2">
-                                <div class="d-flex align-items-center gap-2">
-                                    <i class="bi bi-wallet2 text-primary fs-4"></i>
-                                    <span class="fw-bold text-dark fs-6">अधिकृत पेमेंट तपशील (Official UPI Details)</span>
-                                </div>
-                                <div class="d-flex gap-1">
-                                    <span class="app-badge-pill bg-purple text-white" style="background:#5f259f;"><i class="bi bi-phone"></i> PhonePe</span>
+                    <!-- 100% AUTOMATED RAZORPAY CHECKOUT CARD -->
+                    <div id="paymentOptionsCard">
+                        <div class="razorpay-card p-4 mb-4 text-center">
+                            <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
+                                <span class="badge bg-success text-white px-3 py-1 rounded-pill">
+                                    <i class="bi bi-shield-lock-fill me-1"></i> Razorpay अधिकृत पेमेंट गेटवे
+                                </span>
+                                <div class="d-flex gap-1 flex-wrap">
+                                    <span class="app-badge-pill text-white" style="background:#5f259f;"><i class="bi bi-phone-fill"></i> PhonePe</span>
                                     <span class="app-badge-pill bg-white text-dark border"><i class="bi bi-google text-primary"></i> GPay</span>
                                     <span class="app-badge-pill text-white" style="background:#00b9f5;"><i class="bi bi-wallet2"></i> Paytm</span>
-                                    <span class="app-badge-pill bg-success text-white"><i class="bi bi-shield-check"></i> 100% Safe</span>
+                                    <span class="app-badge-pill bg-dark text-white"><i class="bi bi-credit-card-2-front"></i> Cards/UPI</span>
                                 </div>
                             </div>
 
-                            <div class="bg-white p-3 rounded-3 border text-center my-3">
-                                <div class="small text-muted fw-semibold text-uppercase mb-2">
-                                    <i class="bi bi-patch-check-fill text-primary me-1"></i> पेयीचे नाव (Payee): <strong class="text-dark" th:text="${upiPayeeName}">Omkar Vilas Sarpane</strong>
-                                </div>
-
-                                <!-- UPI ID ROW -->
-                                <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap my-2 p-2 bg-light rounded-3">
-                                    <span class="badge bg-secondary-subtle text-dark border px-2 py-1 small">UPI ID</span>
-                                    <span class="fs-4 fw-extrabold text-primary font-monospace" id="upiVpaField" th:text="${upiVpa}">7820939263@ibl</span>
-                                    <button class="btn btn-outline-primary btn-sm rounded-pill px-3 fw-bold" type="button" onclick="copyUpiId()" id="btnCopyUpi">
-                                        <i class="bi bi-clipboard me-1" id="copyIcon"></i> <span id="copyBtnText">UPI ID कॉपी करा</span>
-                                    </button>
-                                </div>
-
-                                <!-- PHONE NUMBER ROW (Bypasses security reasons error) -->
-                                <div class="d-flex justify-content-center align-items-center gap-2 flex-wrap my-2 p-2 bg-light rounded-3">
-                                    <span class="badge bg-purple text-white px-2 py-1 small" style="background:#5f259f;"><i class="bi bi-phone-fill"></i> PhonePe / GPay नंबर</span>
-                                    <span class="fs-4 fw-extrabold text-dark font-monospace" id="upiMobileField">7820939263</span>
-                                    <button class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold" type="button" onclick="copyMobileNumber()" id="btnCopyMobile">
-                                        <i class="bi bi-copy me-1" id="copyMobileIcon"></i> <span id="copyMobileBtnText">नंबर कॉपी करा</span>
-                                    </button>
-                                </div>
-
-                                <div class="small text-muted mt-2" id="copyFeedback">
-                                    <i class="bi bi-info-circle text-primary me-1"></i> कोणत्याही ॲपने अचूक <strong>₹<span th:text="${job.totalAmount}">2.00</span></strong> पाठवा.
+                            <div class="py-2 mb-3">
+                                <div class="text-muted small mb-1">एकूण देय रक्कम (Total Amount to Pay)</div>
+                                <div class="display-5 fw-extrabold text-primary mb-1" th:text="'₹' + ${job.totalAmount}">₹2.00</div>
+                                <div class="text-success small fw-semibold">
+                                    <i class="bi bi-check-circle-fill me-1"></i> UTR टाकण्याची गरज नाही • थेट स्वयंचलित प्रिंट
                                 </div>
                             </div>
 
-                            <!-- HELPFUL GUIDANCE: SECURITY REASONS ERROR PREVENTION -->
-                            <div class="alert alert-warning py-2 px-3 small border-0 rounded-3 mb-3">
-                                <div class="fw-bold mb-1"><i class="bi bi-shield-exclamation text-warning me-1"></i> "Payment Failed for Security Reasons" एरर येत असल्यास:</div>
-                                <div>बँकेच्या सिक्युरिटी नियमांमुळे डायरेक्ट लिंक अडकल्यास, वरील <strong>मोबाईल नंबर (7820939263)</strong> किंवा <strong>UPI ID</strong> कॉपी करा. PhonePe किंवा GPay मध्ये "To Mobile / UPI ID" निवडून थेट ₹<span th:text="${job.totalAmount}">2.00</span> पाठवा.</div>
+                            <!-- BIG ACTION BUTTON -->
+                            <div class="d-grid gap-2 mb-3">
+                                <button type="button" class="btn btn-razorpay-main" id="btnPayRazorpay" onclick="openRazorpay()">
+                                    <i class="bi bi-credit-card-2-front-fill me-2"></i>
+                                    <span>PhonePe / GPay / कार्डने ₹<span th:text="${job.totalAmount}">2.00</span> भरा (Pay Now)</span>
+                                </button>
                             </div>
 
-                            <!-- 1-CLICK APP BUTTONS FOR SMARTPHONES -->
-                            <div class="mt-3">
-                                <div class="fw-bold text-dark small mb-2">
-                                    <i class="bi bi-phone-vibrate text-primary me-1"></i> किंवा मोबाईलवरून थेट ॲप उघडा:
-                                </div>
-                                <div class="row g-2">
-                                    <div class="col-sm-6">
-                                        <a th:href="${phonepePayload}" class="upi-app-btn btn-phonepe">
-                                            <span class="d-flex align-items-center gap-2">
-                                                <i class="bi bi-phone-fill fs-5"></i>
-                                                <span>PhonePe ने उघडा</span>
-                                            </span>
-                                            <span class="badge bg-white text-dark px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹2.00</span>
-                                        </a>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <a th:href="${gpayPayload}" class="upi-app-btn btn-gpay">
-                                            <span class="d-flex align-items-center gap-2">
-                                                <i class="bi bi-google text-primary fs-5"></i>
-                                                <span class="text-dark">Google Pay (GPay) ने उघडा</span>
-                                            </span>
-                                            <span class="badge bg-primary text-white px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹2.00</span>
-                                        </a>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <a th:href="${paytmPayload}" class="upi-app-btn btn-paytm">
-                                            <span class="d-flex align-items-center gap-2">
-                                                <i class="bi bi-wallet-fill fs-5"></i>
-                                                <span>Paytm ने उघडा</span>
-                                            </span>
-                                            <span class="badge bg-white text-primary px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹2.00</span>
-                                        </a>
-                                    </div>
-                                    <div class="col-sm-6">
-                                        <a th:href="${upiPayload}" class="upi-app-btn btn-any-upi">
-                                            <span class="d-flex align-items-center gap-2">
-                                                <i class="bi bi-arrow-up-right-circle-fill fs-5"></i>
-                                                <span>BHIM / सर्व UPI ॲप्स</span>
-                                            </span>
-                                            <span class="badge bg-white text-success px-2 py-1" th:text="'₹' + ${job.totalAmount}">₹2.00</span>
-                                        </a>
-                                    </div>
-                                </div>
+                            <div class="small text-muted">
+                                <i class="bi bi-info-circle me-1"></i> बटणावर क्लिक केल्यावर Razorpay चा सुरक्षित UPI पॉपअप उघडेल.
                             </div>
                         </div>
 
-                        <!-- SECTION 2: MANDATORY 12-DIGIT UTR SUBMISSION & AUTOMATED VERIFICATION -->
-                        <div class="card p-4 border-2 border-primary shadow-sm mb-4" style="background: #f0f7ff;">
-                            <div class="d-flex align-items-center justify-content-between mb-2 flex-wrap gap-2">
-                                <div class="d-flex align-items-center gap-2 text-primary">
-                                    <i class="bi bi-cpu fs-4"></i>
-                                    <h5 class="fw-bold mb-0 text-dark">पायरी २: स्वयंचलित पडताळणी (Auto Verification)</h5>
+                        <!-- 1-CLICK INSTANT DEMO SIMULATION (FOR VIVA / TESTING) -->
+                        <div class="card p-3 border-0 bg-light rounded-4 text-center mb-3">
+                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
+                                <div class="text-start">
+                                    <div class="fw-bold text-dark small">
+                                        <i class="bi bi-lightning-charge-fill text-warning me-1"></i> कॉलेज व्हिवा आणि चाचणीसाठी (Quick Test Mode):
+                                    </div>
+                                    <div class="text-muted small">बँक खात्याशिवाय त्वरित ऑटो-प्रिंटिंग तपासायचे असल्यास:</div>
                                 </div>
-                                <span class="badge bg-success-subtle text-success border border-success-subtle px-2 py-1 rounded-pill">
-                                    <i class="bi bi-lightning-charge-fill me-1"></i> त्वरित स्वयंचलित प्रिंट
-                                </span>
-                            </div>
-                            <p class="small text-muted mb-3">
-                                पेमेंट केल्यावर तुमच्या ॲपमध्ये (PhonePe / GPay) दिसणारा <strong>१२ अंकी UPI UTR / Ref No.</strong> खाली टाका. बँक एसएमएसद्वारे पडताळणी पूर्ण होताच <strong>मशिनवरून प्रिंट आपोआप निघेल (मॅन्युअल क्लिकची गरज नाही):</strong>
-                            </p>
-
-                            <div class="mb-3">
-                                <label for="utrNumber" class="form-label fw-bold text-dark mb-1">
-                                    <i class="bi bi-receipt text-primary me-1"></i> १२ अंकी UPI UTR / Reference No. <span class="text-danger">*</span>:
-                                </label>
-                                <div class="input-group input-group-lg shadow-sm">
-                                    <span class="input-group-text bg-white text-primary fw-bold"><i class="bi bi-123 fs-4"></i></span>
-                                    <input type="text" 
-                                           class="form-control form-control-lg fw-bold font-monospace" 
-                                           name="utrNumber" 
-                                           id="utrNumber" 
-                                           required
-                                           minlength="6"
-                                           maxlength="24"
-                                           pattern="[0-9A-Za-z]{6,24}"
-                                           placeholder="उदा. 428412345678 (12-Digit UTR)" 
-                                           autocomplete="off">
-                                </div>
-                                <div class="form-text text-muted small mt-1">
-                                    <i class="bi bi-info-circle text-info me-1"></i> पेमेंट पावतीमध्ये "UPI Ref No." किंवा "UTR" असे १२ आकडे असतात.
-                                </div>
-                            </div>
-
-                            <div class="p-2 bg-white rounded border small text-muted">
-                                <i class="bi bi-exclamation-triangle-fill text-warning me-1"></i> <strong>महत्त्वाची सूचना:</strong> 
-                                कृपया अचूक देय रक्कम (<strong>₹<span th:text="${job.totalAmount}">2.00</span></strong>) भरा. अपूर्ण पेमेंट (उदा. ₹२ ऐवजी ₹१) भरल्यास पडताळणी अयशस्वी होईल आणि प्रिंट निघणार नाही.
+                                <button type="button" class="btn btn-outline-success fw-bold px-3 py-2 rounded-pill" id="btnSimulatePay" onclick="triggerAutoSimulation()">
+                                    <i class="bi bi-play-circle-fill me-1"></i> 1-Click Instant Demo Pay
+                                </button>
                             </div>
                         </div>
-
-                        <!-- SUBMIT BUTTON -->
-                        <div class="d-grid gap-2">
-                            <button type="submit" class="btn btn-lg btn-success shadow-lg py-3 fw-bold fs-5" id="btnSubmitPayment">
-                                <i class="bi bi-send-check-fill me-2"></i>
-                                <span>मी पेमेंट केले आहे • UTR पडताळणीसाठी पाठवा</span>
-                            </button>
-                            <div class="text-center small text-muted mt-2">
-                                <i class="bi bi-lock-fill text-success me-1"></i> UTR सबमिट केल्यावर सिस्टीम व ऑपरेटर पडताळणी करेल आणि कनेक्टेड प्रिंटरवर प्रिंट सुरू होईल.
-                            </div>
-                        </div>
-
-                    </form>
+                    </div>
 
                 </div>
 
@@ -321,53 +173,108 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script th:inline="javascript">
-        function copyUpiId() {
-            const upiId = /*[[${upiVpa}]]*/ '7820939263@ibl';
-            navigator.clipboard.writeText(upiId).then(() => {
-                const feedback = document.getElementById('copyFeedback');
-                const copyIcon = document.getElementById('copyIcon');
-                const btnText = document.getElementById('copyBtnText');
-                copyIcon.className = 'bi bi-check-lg text-success';
-                btnText.textContent = 'कॉपी झाला!';
-                feedback.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> UPI ID कॉपी झाला! आता तुमच्या पेमेंट ॲपमध्ये पेस्ट करा.</span>';
-                setTimeout(() => {
-                    copyIcon.className = 'bi bi-clipboard';
-                    btnText.textContent = 'UPI ID कॉपी करा';
-                }, 3000);
-            });
+        const razorpayKeyId = /*[[${razorpayKeyId}]]*/ 'rzp_test_Tw4ZMxNhM8CVL1';
+        const razorpayOrderId = /*[[${razorpayOrderId}]]*/ '';
+        const amountInPaise = /*[[${amountInPaise}]]*/ 200;
+        const trackingToken = /*[[${job.trackingToken}]]*/ '';
+        const customerFilename = /*[[${job.originalFilename}]]*/ 'Document.pdf';
+        const totalAmountStr = /*[[${job.totalAmount}]]*/ '2.00';
+
+        function showProcessing(text) {
+            const optionsCard = document.getElementById('paymentOptionsCard');
+            const procCard = document.getElementById('processingCard');
+            const procText = document.getElementById('processingStatusText');
+            if (optionsCard) optionsCard.classList.add('d-none');
+            if (procCard) procCard.classList.remove('d-none');
+            if (procText && text) procText.textContent = text;
         }
 
-        function copyMobileNumber() {
-            const mobile = '7820939263';
-            navigator.clipboard.writeText(mobile).then(() => {
-                const feedback = document.getElementById('copyFeedback');
-                const copyIcon = document.getElementById('copyMobileIcon');
-                const btnText = document.getElementById('copyMobileBtnText');
-                copyIcon.className = 'bi bi-check-lg text-success';
-                btnText.textContent = 'कॉपी झाला!';
-                feedback.innerHTML = '<span class="text-success fw-bold"><i class="bi bi-check-circle-fill me-1"></i> मोबाईल नंबर (7820939263) कॉपी झाला! PhonePe / GPay वर थेट पाठवा.</span>';
-                setTimeout(() => {
-                    copyIcon.className = 'bi bi-copy';
-                    btnText.textContent = 'नंबर कॉपी करा';
-                }, 3000);
-            });
-        }
+        function openRazorpay() {
+            const payBtn = document.getElementById('btnPayRazorpay');
+            if (payBtn) {
+                payBtn.disabled = true;
+                payBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Razorpay उघडत आहे...';
+            }
 
-        // Validate form on submit
-        const form = document.getElementById('paymentForm');
-        const submitBtn = document.getElementById('btnSubmitPayment');
-        const utrInput = document.getElementById('utrNumber');
-        if (form && submitBtn) {
-            form.addEventListener('submit', function(e) {
-                if (utrInput && utrInput.value.trim().length < 6) {
-                    e.preventDefault();
-                    alert('कृपया पेमेंट ॲपमधील किमान ६ ते १२ अंकी वैध UTR / ट्रान्झॅक्शन आयडी प्रविष्ट करा.');
-                    utrInput.focus();
-                    return;
+            const options = {
+                key: razorpayKeyId,
+                amount: amountInPaise,
+                currency: 'INR',
+                name: 'DigiSeva Print',
+                description: 'Auto Printing: ' + customerFilename,
+                order_id: razorpayOrderId,
+                handler: async function (response) {
+                    showProcessing('पेमेंट यशस्वी! प्रिंटरवर स्वयंचलित प्रिंट सुरू होत आहे...');
+                    try {
+                        const formData = new URLSearchParams();
+                        formData.append('trackingToken', trackingToken);
+                        formData.append('razorpay_order_id', response.razorpay_order_id || razorpayOrderId);
+                        formData.append('razorpay_payment_id', response.razorpay_payment_id);
+                        formData.append('razorpay_signature', response.razorpay_signature);
+
+                        const verifyRes = await fetch('/print/payment/razorpay/verify', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                            body: formData.toString()
+                        });
+
+                        const data = await verifyRes.json();
+                        if (data.success) {
+                            window.location.href = data.redirectUrl || ('/print/confirmation/' + trackingToken);
+                        } else {
+                            alert('पडताळणी अयशस्वी: ' + (data.message || 'त्रुटी'));
+                            if (payBtn) {
+                                payBtn.disabled = false;
+                                payBtn.innerHTML = '💳 पुन्हा प्रयत्न करा';
+                            }
+                        }
+                    } catch (err) {
+                        console.error('Verify error:', err);
+                        window.location.href = '/print/confirmation/' + trackingToken;
+                    }
+                },
+                modal: {
+                    ondismiss: function() {
+                        if (payBtn) {
+                            payBtn.disabled = false;
+                            payBtn.innerHTML = '<i class="bi bi-credit-card-2-front-fill me-2"></i> <span>PhonePe / GPay / कार्डने ₹' + totalAmountStr + ' भरा (Pay Now)</span>';
+                        }
+                    }
+                },
+                theme: {
+                    color: '#2563eb'
                 }
-                submitBtn.disabled = true;
-                submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status"></span> पडताळणीसाठी पाठवत आहे...';
+            };
+
+            const rzp = new Razorpay(options);
+            rzp.on('payment.failed', function (response) {
+                alert('पेमेंट अयशस्वी: ' + (response.error ? response.error.description : 'त्रुटी'));
+                if (payBtn) {
+                    payBtn.disabled = false;
+                    payBtn.innerHTML = '💳 पुन्हा प्रयत्न करा';
+                }
             });
+            rzp.open();
+        }
+
+        async function triggerAutoSimulation() {
+            const simBtn = document.getElementById('btnSimulatePay');
+            if (simBtn) {
+                simBtn.disabled = true;
+                simBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> प्रक्रिया सुरू आहे...';
+            }
+            showProcessing('डेमो पेमेंट पडताळत आहे... प्रिंटर सुरू होत आहे.');
+            try {
+                const res = await fetch('/print/payment/auto-simulate/' + trackingToken, { method: 'POST' });
+                const data = await res.json();
+                if (data.success) {
+                    window.location.href = data.redirectUrl;
+                } else {
+                    alert('Simulation error: ' + data.message);
+                }
+            } catch (e) {
+                window.location.href = '/print/confirmation/' + trackingToken;
+            }
         }
     </script>
 </body>

@@ -249,43 +249,24 @@
                             <div class="display-5 fw-extrabold text-warning mb-2" id="payAmount">₹2.00</div>
                             <p class="text-white-50 mb-3" id="payDesc">कृपया मोबाईलवरील PhonePe, GPay किंवा Paytm ने पेमेंट पूर्ण करा...</p>
 
-                            <!-- Sub-state A: General UPI Apps Badge -->
+                            <!-- Sub-state A: General UPI & Razorpay Apps Badge -->
                             <div id="payAppsBadges" class="d-flex justify-content-center gap-2 mb-3">
+                                <span class="badge px-3 py-2 text-white" style="background:#2563eb;"><i class="bi bi-shield-lock-fill"></i> Razorpay</span>
                                 <span class="badge px-3 py-2 text-white" style="background:#5f259f;"><i class="bi bi-phone"></i> PhonePe</span>
                                 <span class="badge px-3 py-2 bg-white text-dark"><i class="bi bi-google text-primary"></i> GPay</span>
                                 <span class="badge px-3 py-2 text-white" style="background:#00b9f5;"><i class="bi bi-wallet2"></i> Paytm</span>
-                                <span class="badge px-3 py-2 bg-success text-white"><i class="bi bi-qr-code"></i> BHIM (7820939263@ibl)</span>
+                                <span class="badge px-3 py-2 bg-success text-white"><i class="bi bi-credit-card-2-front"></i> Cards/UPI</span>
                             </div>
 
-                            <!-- Sub-state B: Operator Verification Card (Appears when UTR is submitted) -->
-                            <div id="operatorVerificationBox" class="d-none p-3 rounded-4 text-start mx-auto mt-2 shadow-lg"
-                                 style="max-width: 580px; background: rgba(15, 23, 42, 0.95); border: 2px solid #f59e0b;">
-                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                    <span class="badge bg-warning text-dark fw-bold px-3 py-1 rounded-pill">
-                                        <i class="bi bi-shield-check me-1"></i> ऑपरेटर पडताळणी / Operator Action
-                                    </span>
-                                    <span class="badge bg-secondary font-monospace" id="opOrderRef">PAI-XXXX</span>
+                            <!-- 100% AUTOMATED GATEWAY INDICATOR (Zero Operator Intervention) -->
+                            <div class="p-3 rounded-4 text-center mx-auto mt-2 shadow-sm"
+                                 style="max-width: 520px; background: rgba(37, 99, 235, 0.15); border: 1px solid rgba(59, 130, 246, 0.4);">
+                                <div class="d-flex align-items-center justify-content-center gap-2 text-info mb-1">
+                                    <i class="bi bi-lightning-charge-fill text-warning fs-5"></i>
+                                    <span class="fw-bold">स्वयंचलित किऑस्क • 100% Automated Kiosk</span>
                                 </div>
-                                <div class="row g-2 mb-3">
-                                    <div class="col-6">
-                                        <div class="small text-white-50">अपेक्षित रक्कम (Due):</div>
-                                        <div class="fs-4 fw-extrabold text-warning" id="opDueAmount">₹2.00</div>
-                                    </div>
-                                    <div class="col-6">
-                                        <div class="small text-white-50">ग्राहकाचा UPI UTR:</div>
-                                        <div class="fs-5 fw-bold text-info font-monospace" id="opUtrNumber">428412345678</div>
-                                    </div>
-                                </div>
-                                <div class="small text-white-50 mb-3">
-                                    <i class="bi bi-bell-fill text-warning me-1"></i> <strong>दुकानदार / ऑपरेटर:</strong> तुमच्या PhonePe/GPay वर अचूक रक्कम प्राप्त झाली आहे का?
-                                </div>
-                                <div class="d-flex gap-2">
-                                    <button type="button" class="btn btn-success fw-bold flex-grow-1 py-2" id="btnOpApprove" onclick="operatorApprovePayment()">
-                                        <i class="bi bi-check-circle-fill me-1"></i> ✅ रक्कम प्राप्त झाली • प्रिंट करा
-                                    </button>
-                                    <button type="button" class="btn btn-outline-danger fw-bold py-2" id="btnOpReject" onclick="operatorRejectPayment()">
-                                        <i class="bi bi-x-circle me-1"></i> ❌ चुकीची रक्कम (नाकारा)
-                                    </button>
+                                <div class="small text-white-50">
+                                    ग्राहकाने मोबाईलवर पेमेंट पूर्ण करताच मशिनमधून प्रिंट आपोआप निघेल. (कोणत्याही ऑपरेटरची गरज नाही)
                                 </div>
                             </div>
                         </div>
@@ -471,23 +452,10 @@
                     statePayment.classList.remove('d-none');
                     stageBadge.className = 'badge bg-warning text-dark px-3 py-2 rounded-pill';
                     payAmount.textContent = data.totalAmount || '₹0.00';
-                    payDesc.textContent = data.stageDescription;
-
-                    const opBox = document.getElementById('operatorVerificationBox');
-                    const opOrderRef = document.getElementById('opOrderRef');
-                    const opDueAmount = document.getElementById('opDueAmount');
-                    const opUtrNumber = document.getElementById('opUtrNumber');
+                    payDesc.textContent = 'कृपया मोबाईलवर Razorpay / PhonePe / GPay ने पेमेंट पूर्ण करा...';
                     const paymentStageHeader = document.getElementById('paymentStageHeader');
-
-                    if (data.awaitingVerification || data.stage === 'PAYMENT_VERIFICATION_PENDING' || data.customerUtr) {
-                        if (opBox) opBox.classList.remove('d-none');
-                        if (opOrderRef) opOrderRef.textContent = data.orderReference || 'PAI-XXXX';
-                        if (opDueAmount) opDueAmount.textContent = data.totalAmount || '₹0.00';
-                        if (opUtrNumber) opUtrNumber.textContent = data.customerUtr || 'UTR Submitted';
-                        if (paymentStageHeader) paymentStageHeader.textContent = 'पेमेंट पडताळणी प्रलंबित • Payment Verification';
-                    } else {
-                        if (opBox) opBox.classList.add('d-none');
-                        if (paymentStageHeader) paymentStageHeader.textContent = 'Awaiting Payment • देय रक्कम';
+                    if (paymentStageHeader) {
+                        paymentStageHeader.textContent = 'Awaiting Payment • देय रक्कम';
                     }
                     break;
 

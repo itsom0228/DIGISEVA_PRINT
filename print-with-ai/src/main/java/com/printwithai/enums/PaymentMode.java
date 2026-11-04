@@ -1,6 +1,7 @@
 package com.printwithai.enums;
 
 public enum PaymentMode {
+    RAZORPAY("Razorpay (UPI / QR / Cards)"),
     DEMO_UPI("Demo UPI (Simulated QR / App)"),
     DEMO_CASH("Demo Cash (Counter)");
 

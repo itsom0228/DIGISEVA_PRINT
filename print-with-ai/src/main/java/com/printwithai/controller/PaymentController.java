@@ -25,6 +25,7 @@ public class PaymentController {
     private final PrintJobService printJobService;
     private final PaymentService paymentService;
     private final PaymentTransactionRepository paymentTransactionRepository;
+    private final com.printwithai.service.RazorpayService razorpayService;
 
     @org.springframework.beans.factory.annotation.Value("${app.payment.upi.vpa:7820939263@ibl}")
     private String upiVpa;
@@ -37,10 +38,12 @@ public class PaymentController {
 
     public PaymentController(PrintJobService printJobService,
                              PaymentService paymentService,
-                             PaymentTransactionRepository paymentTransactionRepository) {
+                             PaymentTransactionRepository paymentTransactionRepository,
+                             com.printwithai.service.RazorpayService razorpayService) {
         this.printJobService = printJobService;
         this.paymentService = paymentService;
         this.paymentTransactionRepository = paymentTransactionRepository;
+        this.razorpayService = razorpayService;
     }
 
     @GetMapping("/payment/{trackingToken}")
@@ -51,17 +54,15 @@ public class PaymentController {
             return "redirect:/print/confirmation/" + trackingToken;
         }
 
-        // Check if customer already submitted UTR and is awaiting verification
-        Optional<PaymentTransaction> pendingTxn = paymentTransactionRepository.findFirstByPrintJobOrderByCreatedAtDesc(job);
-        if (pendingTxn.isPresent() && pendingTxn.get().getStatus() == PaymentStatus.DEMO_PENDING
-                && pendingTxn.get().getTransactionReference() != null
-                && !pendingTxn.get().getTransactionReference().isBlank()
-                && !pendingTxn.get().getTransactionReference().startsWith("TRK-")) {
-            return "redirect:/print/payment/verifying/" + trackingToken;
-        }
+        // Initialize Razorpay Order for 100% automated checkout
+        String razorpayOrderId = razorpayService.createOrder(job);
+        long amountInPaise = job.getTotalAmount().multiply(BigDecimal.valueOf(100)).longValue();
 
         model.addAttribute("job", job);
         model.addAttribute("paymentModes", PaymentMode.values());
+        model.addAttribute("razorpayOrderId", razorpayOrderId);
+        model.addAttribute("razorpayKeyId", razorpayService.getKeyId());
+        model.addAttribute("amountInPaise", amountInPaise);
 
         String amountStr = job.getTotalAmount().toPlainString();
         String orderRef = job.getPublicReference();
@@ -162,6 +163,66 @@ public class PaymentController {
         resp.put("utr", txn.map(PaymentTransaction::getTransactionReference).orElse(""));
 
         return ResponseEntity.ok(resp);
+    }
+
+    /**
+     * 100% AUTOMATED: Razorpay Client-Side Payment Verification Callback
+     * Triggered directly when customer completes UPI / Card payment on their phone.
+     * Verifies cryptographic signature and immediately releases document to hardware printer!
+     */
+    @PostMapping("/payment/razorpay/verify")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> verifyRazorpayPayment(
+            @RequestParam("trackingToken") String trackingToken,
+            @RequestParam(value = "razorpay_order_id", required = false) String razorpayOrderId,
+            @RequestParam(value = "razorpay_payment_id", required = false) String razorpayPaymentId,
+            @RequestParam(value = "razorpay_signature", required = false) String razorpaySignature) {
+
+        try {
+            PaymentTransaction txn = razorpayService.verifyAndProcessPayment(
+                    trackingToken, razorpayOrderId, razorpayPaymentId, razorpaySignature);
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("success", true);
+            resp.put("message", "पेमेंट यशस्वीरीत्या पडताळले! प्रिंटिंग सुरू झाले आहे.");
+            resp.put("redirectUrl", "/print/confirmation/" + trackingToken);
+            return ResponseEntity.ok(resp);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
+    }
+
+    /**
+     * 100% AUTOMATED: Razorpay Server-to-Server Webhook
+     * Asynchronously receives 'payment.captured' / 'order.paid' events from Razorpay cloud.
+     */
+    @PostMapping("/api/payment/razorpay/webhook")
+    @ResponseBody
+    public ResponseEntity<String> handleRazorpayWebhook(
+            @RequestBody String payload,
+            @RequestHeader(value = "X-Razorpay-Signature", required = false) String signature) {
+        razorpayService.processWebhook(payload, signature);
+        return ResponseEntity.ok("OK");
+    }
+
+    /**
+     * Fast 1-Click Auto Simulation for viva demonstration and testing
+     */
+    @PostMapping("/payment/auto-simulate/{trackingToken}")
+    @ResponseBody
+    public ResponseEntity<Map<String, Object>> autoSimulatePayment(
+            @PathVariable("trackingToken") String trackingToken) {
+        try {
+            String mockPaymentId = "pay_sim_" + System.currentTimeMillis();
+            String mockOrderId = "order_sim_" + System.currentTimeMillis();
+            razorpayService.verifyAndProcessPayment(trackingToken, mockOrderId, mockPaymentId, "test_signature_bypass");
+            Map<String, Object> resp = new HashMap<>();
+            resp.put("success", true);
+            resp.put("message", "Simulated Payment Successful! Printing initiated.");
+            resp.put("redirectUrl", "/print/confirmation/" + trackingToken);
+            return ResponseEntity.ok(resp);
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
+        }
     }
 
     /**
