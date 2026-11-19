@@ -62,6 +62,9 @@
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
 
+                <!-- Dynamic Client-Side Alert Box -->
+                <div id="dynamicAlertBox" class="d-none"></div>
+
                 <div class="card border-0 shadow-lg rounded-4 p-4 p-md-5 bg-white">
 
                     <!-- Header with Order Ref & Live Amount Due -->
@@ -173,12 +176,19 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script th:inline="javascript">
-        const razorpayKeyId = /*[[${razorpayKeyId}]]*/ 'rzp_test_Tw4ZMxNhM8CVL1';
-        const razorpayOrderId = /*[[${razorpayOrderId}]]*/ '';
+        const defaultRazorpayKeyId = /*[[${razorpayKeyId}]]*/ '';
+        const defaultRazorpayOrderId = /*[[${razorpayOrderId}]]*/ '';
         const amountInPaise = /*[[${amountInPaise}]]*/ 200;
         const trackingToken = /*[[${job.trackingToken}]]*/ '';
         const customerFilename = /*[[${job.originalFilename}]]*/ 'Document.pdf';
         const totalAmountStr = /*[[${job.totalAmount}]]*/ '2.00';
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
         function showProcessing(text) {
             const optionsCard = document.getElementById('paymentOptionsCard');
@@ -189,72 +199,149 @@
             if (procText && text) procText.textContent = text;
         }
 
-        function openRazorpay() {
+        function hideProcessing() {
+            const optionsCard = document.getElementById('paymentOptionsCard');
+            const procCard = document.getElementById('processingCard');
+            if (procCard) procCard.classList.add('d-none');
+            if (optionsCard) optionsCard.classList.remove('d-none');
+        }
+
+        function showClientAlert(type, message) {
+            const box = document.getElementById('dynamicAlertBox');
+            if (box) {
+                const icon = (type === 'danger') ? 'bi-exclamation-triangle-fill' :
+                             (type === 'warning') ? 'bi-exclamation-circle-fill' : 'bi-info-circle-fill';
+                box.className = 'alert alert-' + type + ' alert-dismissible fade show shadow-sm mb-4';
+                box.innerHTML = '<i class="bi ' + icon + ' me-2"></i>' + escapeHtml(message) +
+                                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+                box.classList.remove('d-none');
+                box.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+            } else {
+                alert(message);
+            }
+        }
+
+        function resetPayButton() {
+            hideProcessing();
+            const payBtn = document.getElementById('btnPayRazorpay');
+            if (payBtn) {
+                payBtn.disabled = false;
+                payBtn.innerHTML = '<i class="bi bi-credit-card-2-front-fill me-2"></i> <span>PhonePe / GPay / कार्डने ₹' + totalAmountStr + ' भरा (Pay Now)</span>';
+            }
+        }
+
+        /**
+         * STEP 2: FRONTEND - Checkout
+         * 1. On button click: call create-order
+         * 2. Open Razorpay modal with order_id
+         * 3. On success: receive razorpay_payment_id, razorpay_order_id, razorpay_signature
+         * 4. Send all three to verify endpoint
+         * 5. Handle modal dismiss (user cancelled)
+         * 6. Handle payment.failed event
+         */
+        async function openRazorpay() {
             const payBtn = document.getElementById('btnPayRazorpay');
             if (payBtn) {
                 payBtn.disabled = true;
-                payBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> Razorpay उघडत आहे...';
+                payBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> सुरक्षित Razorpay ऑर्डर तयार करत आहे...';
             }
 
-            const options = {
-                key: razorpayKeyId,
-                amount: amountInPaise,
-                currency: 'INR',
-                name: 'DigiSeva Print',
-                description: 'Auto Printing: ' + customerFilename,
-                order_id: razorpayOrderId,
-                handler: async function (response) {
-                    showProcessing('पेमेंट यशस्वी! प्रिंटरवर स्वयंचलित प्रिंट सुरू होत आहे...');
-                    try {
-                        const formData = new URLSearchParams();
-                        formData.append('trackingToken', trackingToken);
-                        formData.append('razorpay_order_id', response.razorpay_order_id || razorpayOrderId);
-                        formData.append('razorpay_payment_id', response.razorpay_payment_id);
-                        formData.append('razorpay_signature', response.razorpay_signature);
+            try {
+                // Step 1: Call Backend Create Order endpoint
+                const createRes = await fetch('/api/create-order', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        amount: amountInPaise,
+                        currency: 'INR',
+                        receipt: trackingToken
+                    })
+                });
 
-                        const verifyRes = await fetch('/print/payment/razorpay/verify', {
-                            method: 'POST',
-                            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                            body: formData.toString()
-                        });
+                if (!createRes.ok) {
+                    const errPayload = await createRes.json().catch(() => ({}));
+                    const errMsg = errPayload.message || errPayload.error || ('Order creation failed with HTTP ' + createRes.status);
+                    throw new Error(errMsg);
+                }
 
-                        const data = await verifyRes.json();
-                        if (data.success) {
-                            window.location.href = data.redirectUrl || ('/print/confirmation/' + trackingToken);
-                        } else {
-                            alert('पडताळणी अयशस्वी: ' + (data.message || 'त्रुटी'));
-                            if (payBtn) {
-                                payBtn.disabled = false;
-                                payBtn.innerHTML = '💳 पुन्हा प्रयत्न करा';
+                const orderData = await createRes.json();
+                const activeOrderId = orderData.order_id || defaultRazorpayOrderId;
+                const activeKeyId = orderData.key_id || defaultRazorpayKeyId;
+
+                if (!activeOrderId) {
+                    throw new Error('Server did not return a valid Razorpay order ID.');
+                }
+
+                // Step 2: Open Razorpay Checkout Modal
+                const options = {
+                    key: activeKeyId,
+                    amount: orderData.amount || amountInPaise,
+                    currency: orderData.currency || 'INR',
+                    name: 'DigiSeva Print',
+                    description: 'Automated Print Order: ' + customerFilename,
+                    order_id: activeOrderId,
+                    handler: async function (response) {
+                        // Step 3: On payment success, receive IDs & signature
+                        showProcessing('पेमेंट यशस्वी! स्वाक्षरी पडताळत आहे आणि प्रिंटरवर पाठवत आहे...');
+                        try {
+                            const verifyRes = await fetch('/api/verify-payment', {
+                                method: 'POST',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({
+                                    razorpay_order_id: response.razorpay_order_id || activeOrderId,
+                                    razorpay_payment_id: response.razorpay_payment_id,
+                                    razorpay_signature: response.razorpay_signature,
+                                    trackingToken: trackingToken
+                                })
+                            });
+
+                            const verifyData = await verifyRes.json().catch(() => ({}));
+
+                            if (verifyRes.ok && (verifyData.status === 'success' || verifyData.success === true)) {
+                                window.location.href = verifyData.redirectUrl || ('/print/confirmation/' + trackingToken);
+                            } else {
+                                const failMsg = verifyData.message || verifyData.error || 'पेमेंट स्वाक्षरी पडताळणी अयशस्वी.';
+                                showClientAlert('danger', 'पडताळणी अयशस्वी: ' + failMsg);
+                                resetPayButton();
                             }
+                        } catch (verifyErr) {
+                            console.error('Verify error:', verifyErr);
+                            showClientAlert('danger', 'पेमेंट पडताळणी दरम्यान त्रुटी उद्भवली. कृपया ऑपरेटरशी संपर्क साधा.');
+                            resetPayButton();
                         }
-                    } catch (err) {
-                        console.error('Verify error:', err);
-                        window.location.href = '/print/confirmation/' + trackingToken;
-                    }
-                },
-                modal: {
-                    ondismiss: function() {
-                        if (payBtn) {
-                            payBtn.disabled = false;
-                            payBtn.innerHTML = '<i class="bi bi-credit-card-2-front-fill me-2"></i> <span>PhonePe / GPay / कार्डने ₹' + totalAmountStr + ' भरा (Pay Now)</span>';
+                    },
+                    modal: {
+                        ondismiss: function () {
+                            // User cancelled modal
+                            console.log('[RAZORPAY] Payment cancelled / dismissed by customer');
+                            showClientAlert('warning', 'पेमेंट प्रक्रिया रद्द केली गेली (Payment cancelled by user). तुम्ही पुन्हा प्रयत्न करू शकता.');
+                            resetPayButton();
                         }
+                    },
+                    theme: {
+                        color: '#2563eb'
                     }
-                },
-                theme: {
-                    color: '#2563eb'
-                }
-            };
+                };
 
-            const rzp = new Razorpay(options);
-            rzp.on('payment.failed', function (response) {
-                alert('पेमेंट अयशस्वी: ' + (response.error ? response.error.description : 'त्रुटी'));
-                if (payBtn) {
-                    payBtn.disabled = false;
-                    payBtn.innerHTML = '💳 पुन्हा प्रयत्न करा';
-                }
-            });
-            rzp.open();
+                const rzp = new Razorpay(options);
+
+                // Handle payment.failed event
+                rzp.on('payment.failed', function (failResponse) {
+                    console.error('[RAZORPAY] Payment failed:', failResponse.error);
+                    const reason = (failResponse.error && failResponse.error.description)
+                        ? failResponse.error.description
+                        : 'पेमेंट अयशस्वी झाले.';
+                    showClientAlert('danger', 'पेमेंट अयशस्वी: ' + reason);
+                    resetPayButton();
+                });
+
+                rzp.open();
+
+            } catch (err) {
+                console.error('[RAZORPAY] Checkout initialization error:', err);
+                showClientAlert('danger', 'त्रुटी: ' + err.message);
+                resetPayButton();
+            }
         }
 
         async function triggerAutoSimulation() {
@@ -270,7 +357,8 @@
                 if (data.success) {
                     window.location.href = data.redirectUrl;
                 } else {
-                    alert('Simulation error: ' + data.message);
+                    showClientAlert('danger', 'Simulation error: ' + data.message);
+                    resetPayButton();
                 }
             } catch (e) {
                 window.location.href = '/print/confirmation/' + trackingToken;

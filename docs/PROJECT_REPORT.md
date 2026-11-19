@@ -43,13 +43,20 @@ Current printing operations in public and educational spaces suffer from the fol
 
 | Feature | Existing Manual Printing Shops | Proposed "Print with AI" Kiosk |
 |---|---|---|
-| **Access Model** | USB pen-drive or WhatsApp transfer to clerk | Zero-contact smartphone QR scan |
-| **Document Privacy** | Files remain on shopkeeper's desktop | Stored with random UUID; purged after retention window |
-| **Pricing Transparency** | Arbitrary prices decided by shopkeeper | Mathematical server-calculated formula using `BigDecimal` |
-| **Document Assistance** | None; blank pages are printed and charged | AI warns about low text density / blank pages beforehand |
-| **Multilingual Support** | English-only printer dialogues | Trilingual (English, Marathi, Hindi) |
-| **Payment Options** | Cash change disputes | Instant simulated demo UPI QR or counter mode |
-| **Tracking** | Manual inquiry with shopkeeper | Secure token-based public tracking timeline |
+| **Access Model** |
+ USB pen-drive or WhatsApp transfer to clerk | Zero-contact smartphone QR scan |
+| **Document Privacy** |
+ Files remain on shopkeeper's desktop | Stored with random UUID; purged after retention window |
+| **Pricing Transparency** |
+ Arbitrary prices decided by shopkeeper | Mathematical server-calculated formula using `BigDecimal` |
+| **Document Assistance** |
+ None; blank pages are printed and charged | AI warns about low text density / blank pages beforehand |
+| **Multilingual Support** | 
+English-only printer dialogues | Trilingual (English, Marathi, Hindi) |
+| **Payment Options** | 
+Cash change disputes | Instant simulated demo UPI QR or counter mode |
+| **Tracking** | 
+Manual inquiry with shopkeeper | Secure token-based public tracking timeline |
 
 ---
 

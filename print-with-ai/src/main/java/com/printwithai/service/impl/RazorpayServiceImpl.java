@@ -26,6 +26,9 @@ import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.math.BigDecimal;
 import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 
 @Service
@@ -38,13 +41,13 @@ public class RazorpayServiceImpl implements RazorpayService {
     private final PrinterService printerService;
     private final KioskLogRepository kioskLogRepository;
 
-    @Value("${razorpay.key-id:rzp_test_Tw4ZMxNhM8CVL1}")
+    @Value("${razorpay.key-id:${RAZORPAY_KEY_ID:}}")
     private String keyId;
 
-    @Value("${razorpay.key-secret:tPGeink8bPULm1M2JQjo5isa}")
+    @Value("${razorpay.key-secret:${RAZORPAY_KEY_SECRET:}}")
     private String keySecret;
 
-    @Value("${razorpay.currency:INR}")
+    @Value("${razorpay.currency:${RAZORPAY_CURRENCY:INR}}")
     private String currency;
 
     @Value("${razorpay.webhook-secret:}")
@@ -63,6 +66,44 @@ public class RazorpayServiceImpl implements RazorpayService {
     @Override
     public String getKeyId() {
         return keyId;
+    }
+
+    @Override
+    public String getKeySecret() {
+        return keySecret;
+    }
+
+    @Override
+    public Map<String, Object> createOrderRaw(long amountInPaise, String currency, String receipt) throws Exception {
+        if (amountInPaise < 100) {
+            throw new IllegalArgumentException("Amount must be at least 100 paise");
+        }
+
+        String targetCurrency = (currency != null && !currency.isBlank()) ? currency : (this.currency != null ? this.currency : "INR");
+        String targetReceipt = (receipt != null && !receipt.isBlank()) ? receipt : ("rcpt_" + System.currentTimeMillis());
+
+        if (keyId == null || keyId.isBlank() || keySecret == null || keySecret.isBlank()) {
+            throw new IllegalStateException("Razorpay credentials are not configured in environment (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET)");
+        }
+
+        RazorpayClient client = new RazorpayClient(keyId, keySecret);
+        JSONObject orderRequest = new JSONObject();
+        orderRequest.put("amount", amountInPaise);
+        orderRequest.put("currency", targetCurrency);
+        orderRequest.put("receipt", targetReceipt);
+
+        log.info("[RAZORPAY] Creating order via Razorpay API: amount={} paise, currency={}, receipt={}",
+                amountInPaise, targetCurrency, targetReceipt);
+        Order order = client.orders.create(orderRequest);
+        String orderId = order.get("id");
+        log.info("[RAZORPAY] Order created successfully: {}", orderId);
+
+        Map<String, Object> response = new HashMap<>();
+        response.put("order_id", orderId);
+        response.put("amount", amountInPaise);
+        response.put("currency", targetCurrency);
+        response.put("key_id", keyId);
+        return response;
     }
 
     @Override
@@ -204,8 +245,18 @@ public class RazorpayServiceImpl implements RazorpayService {
         }
     }
 
+    @Override
+    public boolean verifySignatureOnly(String orderId, String paymentId, String signature) {
+        return verifySignature(orderId, paymentId, signature);
+    }
+
     private boolean verifySignature(String orderId, String paymentId, String signature) {
-        if (orderId == null || paymentId == null || signature == null) {
+        if (orderId == null || paymentId == null || signature == null ||
+                orderId.isBlank() || paymentId.isBlank() || signature.isBlank()) {
+            return false;
+        }
+        if (keySecret == null || keySecret.isBlank()) {
+            log.error("[RAZORPAY] Razorpay keySecret is missing or empty.");
             return false;
         }
         try {
@@ -223,7 +274,11 @@ public class RazorpayServiceImpl implements RazorpayService {
                 }
                 hexString.append(hex);
             }
-            return hexString.toString().equalsIgnoreCase(signature.trim());
+            String calculated = hexString.toString();
+            return MessageDigest.isEqual(
+                    calculated.getBytes(StandardCharsets.UTF_8),
+                    signature.trim().getBytes(StandardCharsets.UTF_8)
+            );
         } catch (Exception e) {
             log.error("[RAZORPAY] Signature calculation error: {}", e.getMessage());
             return false;
