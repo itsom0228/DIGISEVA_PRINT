@@ -16,12 +16,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class RazorpaySignatureTest {
 
     private RazorpayServiceImpl razorpayService;
-    private final String testKeySecret = "yE8GUyjt5kQxlDlyTOuV8735";
+    private final String testKeySecret = "IY0zCuTEe3y69QOqVXZcaZ8q";
 
     @BeforeEach
     void setUp() {
         razorpayService = new RazorpayServiceImpl(null, null, null, null);
-        ReflectionTestUtils.setField(razorpayService, "keyId", "rzp_test_U1tg1HAd3f3eex");
+        ReflectionTestUtils.setField(razorpayService, "keyId", "rzp_live_U1xaW9yEXd9neF");
         ReflectionTestUtils.setField(razorpayService, "keySecret", testKeySecret);
     }
 

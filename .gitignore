@@ -30,10 +30,12 @@ uploads/*
 .project
 .settings/
 
-# OS generated
+# OS & Office generated
 Thumbs.db
 Desktop.ini
 .DS_Store
+~$*
+*.tmp
 
 # Environment & Secrets
 .env

@@ -37,9 +37,9 @@ public class PaymentController {
     private String operatorPin;
 
     public PaymentController(PrintJobService printJobService,
-                             PaymentService paymentService,
-                             PaymentTransactionRepository paymentTransactionRepository,
-                             com.printwithai.service.RazorpayService razorpayService) {
+            PaymentService paymentService,
+            PaymentTransactionRepository paymentTransactionRepository,
+            com.printwithai.service.RazorpayService razorpayService) {
         this.printJobService = printJobService;
         this.paymentService = paymentService;
         this.paymentTransactionRepository = paymentTransactionRepository;
@@ -54,7 +54,7 @@ public class PaymentController {
             return "redirect:/print/confirmation/" + trackingToken;
         }
 
-        // Initialize Razorpay Order for 100% automated checkout
+        // Initialize Razorpay Order for automated checkout
         String razorpayOrderId = razorpayService.createOrder(job);
         long amountInPaise = job.getTotalAmount().multiply(BigDecimal.valueOf(100)).longValue();
 
@@ -76,19 +76,13 @@ public class PaymentController {
             encodedNote = "Order_" + orderRef;
         }
 
-        // Clean P2P NPCI UPI URI with exact amount (Omit merchant 'tr=' and custom schemes to eliminate "Payment failed for security reasons")
         String upiPayload = String.format("upi://pay?pa=%s&pn=%s&am=%s&cu=INR&tn=%s",
                 upiVpa, encodedPayee, amountStr, encodedNote);
 
-        // Standard Universal Android Intent for PhonePe, GPay, Paytm without merchant restrictions
-        String phonepePayload = upiPayload;
-        String gpayPayload = upiPayload;
-        String paytmPayload = upiPayload;
-
         model.addAttribute("upiPayload", upiPayload);
-        model.addAttribute("phonepePayload", phonepePayload);
-        model.addAttribute("gpayPayload", gpayPayload);
-        model.addAttribute("paytmPayload", paytmPayload);
+        model.addAttribute("phonepePayload", upiPayload);
+        model.addAttribute("gpayPayload", upiPayload);
+        model.addAttribute("paytmPayload", upiPayload);
         model.addAttribute("upiVpa", upiVpa);
         model.addAttribute("upiPayeeName", upiPayeeName);
 
@@ -282,8 +276,6 @@ public class PaymentController {
             return ResponseEntity.badRequest().body(Map.of("success", false, "message", e.getMessage()));
         }
     }
-
-
 
     @GetMapping("/confirmation/{trackingToken}")
     public String showConfirmationPage(@PathVariable("trackingToken") String trackingToken, Model model) {

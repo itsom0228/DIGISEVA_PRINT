@@ -46,7 +46,7 @@ class RazorpayApiControllerTest {
             map.put("order_id", "order_test_12345");
             map.put("amount", amountInPaise);
             map.put("currency", currency != null ? currency : "INR");
-            map.put("key_id", "rzp_test_U1tg1HAd3f3eex");
+            map.put("key_id", "rzp_live_U1xaW9yEXd9neF");
             return map;
         }
 
@@ -66,12 +66,12 @@ class RazorpayApiControllerTest {
 
         @Override
         public String getKeyId() {
-            return "rzp_test_U1tg1HAd3f3eex";
+            return "rzp_live_U1xaW9yEXd9neF";
         }
 
         @Override
         public String getKeySecret() {
-            return "yE8GUyjt5kQxlDlyTOuV8735";
+            return "IY0zCuTEe3y69QOqVXZcaZ8q";
         }
     }
 
@@ -114,7 +114,7 @@ class RazorpayApiControllerTest {
                 .andExpect(jsonPath("$.order_id").value("order_test_12345"))
                 .andExpect(jsonPath("$.amount").value(200))
                 .andExpect(jsonPath("$.currency").value("INR"))
-                .andExpect(jsonPath("$.key_id").value("rzp_test_U1tg1HAd3f3eex"));
+                .andExpect(jsonPath("$.key_id").value("rzp_live_U1xaW9yEXd9neF"));
     }
 
     @Test

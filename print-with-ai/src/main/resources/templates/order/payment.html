@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>पेमेंट पुष्टीकरण / Complete Payment — DIGISEVA PRINT</title>
+    <title th:text="#{payment.title} + ' — DIGISEVA PRINT'">Payment Confirmation — DIGISEVA PRINT</title>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.css" rel="stylesheet">
     <link th:href="@{/css/style.css}" rel="stylesheet">
@@ -19,7 +19,7 @@
         .btn-razorpay-main {
             background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
             color: #ffffff !important;
-            padding: 1.1rem;
+            padding: 1.15rem;
             font-size: 1.25rem;
             font-weight: 700;
             border-radius: 0.85rem;
@@ -71,16 +71,17 @@
                     <div class="d-flex align-items-center justify-content-between mb-4 pb-3 border-bottom flex-wrap gap-3">
                         <div>
                             <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-1 rounded-pill mb-2">
-                                <i class="bi bi-lightning-charge-fill me-1"></i> 100% Automated Self-Service
+                                <i class="bi bi-lightning-charge-fill me-1"></i>
+                                <span th:text="#{payment.self_service_badge}">100% Automated Self-Service</span>
                             </span>
-                            <h2 class="fw-bold mb-0 text-slate-900" th:text="#{payment.title}">पेमेंट पुष्टीकरण</h2>
+                            <h2 class="fw-bold mb-0 text-slate-900" th:text="#{payment.title}">Payment Confirmation</h2>
                             <div class="text-muted small mt-1">
                                 <i class="bi bi-shield-check text-success me-1"></i> 
-                                <span>पेमेंट पूर्ण होताच ऑपरेटरच्या हस्तक्षेपाशिवाय प्रिंटरवरून कागद आपोआप निघेल.</span>
+                                <span th:text="#{payment.auto_print_note}">Document will automatically print immediately upon payment confirmation.</span>
                             </div>
                         </div>
                         <div class="text-end bg-primary-subtle p-3 rounded-4 border border-primary-subtle">
-                            <div class="small fw-semibold text-primary text-uppercase" style="letter-spacing: 0.5px;" th:text="#{payment.amount_due}">देय रक्कम / Amount</div>
+                            <div class="small fw-semibold text-primary text-uppercase" style="letter-spacing: 0.5px;" th:text="#{payment.amount_due}">Amount Due</div>
                             <div class="fs-1 fw-extrabold text-primary lh-1 mt-1" th:text="'₹' + ${job.totalAmount}">₹2.00</div>
                         </div>
                     </div>
@@ -89,37 +90,38 @@
                     <div class="p-3 bg-light rounded-3 mb-4 border">
                         <div class="row g-2 small">
                             <div class="col-6 col-md-3">
-                                <span class="text-muted d-block" th:text="#{payment.doc}">दस्तावेज / File:</span>
+                                <span class="text-muted d-block" th:text="#{payment.doc}">Document:</span>
                                 <strong class="text-truncate d-block" th:text="${job.originalFilename}">Doc.pdf</strong>
                             </div>
                             <div class="col-6 col-md-3">
-                                <span class="text-muted d-block" th:text="#{payment.mode}">प्रिंट प्रकार / Mode:</span>
-                                <strong th:text="${job.printType.displayName}">Black & White</strong>
+                                <span class="text-muted d-block" th:text="#{payment.mode}">Print Mode:</span>
+                                <strong th:text="#{${'print.type.' + job.printType.name()}}">Black & White</strong>
                             </div>
                             <div class="col-6 col-md-3">
-                                <span class="text-muted d-block" th:text="#{payment.pages}">पृष्ठे / Pages:</span>
-                                <strong th:text="${job.selectedPageCount} + ' ' + #{payment.pages_suffix}">1 पृष्ठे</strong>
+                                <span class="text-muted d-block" th:text="#{payment.pages}">Pages:</span>
+                                <strong th:text="${job.selectedPageCount} + ' ' + #{payment.pages_suffix}">1 Pages</strong>
                             </div>
                             <div class="col-6 col-md-3">
-                                <span class="text-muted d-block" th:text="#{payment.copies}">प्रती / Copies:</span>
+                                <span class="text-muted d-block" th:text="#{payment.copies}">Copies:</span>
                                 <strong th:text="${job.copies} + ' ' + #{payment.copies_suffix}">1 Copy</strong>
                             </div>
                         </div>
                     </div>
 
-                    <!-- Processing Overlay (Visible during auto-verification) -->
+                    <!-- Processing Overlay (Visible during payment verification) -->
                     <div id="processingCard" class="d-none text-center p-5 mb-4 rounded-4" style="background:#f8fafc; border:2px dashed #2563eb;">
                         <div class="spinner-border text-primary mb-3" style="width: 3.5rem; height: 3.5rem;" role="status"></div>
-                        <h4 class="fw-bold text-dark" id="processingStatusText">पेमेंट पडताळणी सुरू आहे...</h4>
-                        <p class="text-muted small mb-0">कृपया प्रतीक्षा करा, तुमचे दस्तऐवज थेट प्रिंटरकडे पाठवले जात आहे.</p>
+                        <h4 class="fw-bold text-dark" id="processingStatusText" th:text="#{payment.processing_title}">Verifying payment...</h4>
+                        <p class="text-muted small mb-0" th:text="#{payment.processing_subtitle}">Please wait, releasing your document directly to the printer.</p>
                     </div>
 
-                    <!-- 100% AUTOMATED RAZORPAY CHECKOUT CARD -->
+                    <!-- FINAL PRODUCTION RAZORPAY CHECKOUT CARD -->
                     <div id="paymentOptionsCard">
-                        <div class="razorpay-card p-4 mb-4 text-center">
+                        <div class="razorpay-card p-4 mb-3 text-center">
                             <div class="d-flex justify-content-between align-items-center mb-3 flex-wrap gap-2">
                                 <span class="badge bg-success text-white px-3 py-1 rounded-pill">
-                                    <i class="bi bi-shield-lock-fill me-1"></i> Razorpay अधिकृत पेमेंट गेटवे
+                                    <i class="bi bi-shield-lock-fill me-1"></i>
+                                    <span th:text="#{payment.razorpay_gateway_badge}">Official Razorpay Payment Gateway</span>
                                 </span>
                                 <div class="d-flex gap-1 flex-wrap">
                                     <span class="app-badge-pill text-white" style="background:#5f259f;"><i class="bi bi-phone-fill"></i> PhonePe</span>
@@ -130,38 +132,25 @@
                             </div>
 
                             <div class="py-2 mb-3">
-                                <div class="text-muted small mb-1">एकूण देय रक्कम (Total Amount to Pay)</div>
+                                <div class="text-muted small mb-1" th:text="#{payment.total_due}">Total Amount to Pay</div>
                                 <div class="display-5 fw-extrabold text-primary mb-1" th:text="'₹' + ${job.totalAmount}">₹2.00</div>
                                 <div class="text-success small fw-semibold">
-                                    <i class="bi bi-check-circle-fill me-1"></i> UTR टाकण्याची गरज नाही • थेट स्वयंचलित प्रिंट
+                                    <i class="bi bi-check-circle-fill me-1"></i>
+                                    <span th:text="#{payment.auto_print_subnote}">Instant Automatic Print • Cards, UPI & NetBanking</span>
                                 </div>
                             </div>
 
-                            <!-- BIG ACTION BUTTON -->
+                            <!-- MAIN PRODUCTION PAY BUTTON -->
                             <div class="d-grid gap-2 mb-3">
                                 <button type="button" class="btn btn-razorpay-main" id="btnPayRazorpay" onclick="openRazorpay()">
                                     <i class="bi bi-credit-card-2-front-fill me-2"></i>
-                                    <span>PhonePe / GPay / कार्डने ₹<span th:text="${job.totalAmount}">2.00</span> भरा (Pay Now)</span>
+                                    <span id="btnPayLabel" th:text="#{payment.pay_btn_label('₹' + ${job.totalAmount})}">Pay ₹2.00 Now</span>
                                 </button>
                             </div>
 
                             <div class="small text-muted">
-                                <i class="bi bi-info-circle me-1"></i> बटणावर क्लिक केल्यावर Razorpay चा सुरक्षित UPI पॉपअप उघडेल.
-                            </div>
-                        </div>
-
-                        <!-- 1-CLICK INSTANT DEMO SIMULATION (FOR VIVA / TESTING) -->
-                        <div class="card p-3 border-0 bg-light rounded-4 text-center mb-3">
-                            <div class="d-flex align-items-center justify-content-between flex-wrap gap-2">
-                                <div class="text-start">
-                                    <div class="fw-bold text-dark small">
-                                        <i class="bi bi-lightning-charge-fill text-warning me-1"></i> कॉलेज व्हिवा आणि चाचणीसाठी (Quick Test Mode):
-                                    </div>
-                                    <div class="text-muted small">बँक खात्याशिवाय त्वरित ऑटो-प्रिंटिंग तपासायचे असल्यास:</div>
-                                </div>
-                                <button type="button" class="btn btn-outline-success fw-bold px-3 py-2 rounded-pill" id="btnSimulatePay" onclick="triggerAutoSimulation()">
-                                    <i class="bi bi-play-circle-fill me-1"></i> 1-Click Instant Demo Pay
-                                </button>
+                                <i class="bi bi-info-circle me-1"></i>
+                                <span th:text="#{payment.popup_notice}">Clicking the button will open Razorpay's secure payment modal.</span>
                             </div>
                         </div>
                     </div>
@@ -176,12 +165,23 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     <script th:inline="javascript">
-        const defaultRazorpayKeyId = /*[[${razorpayKeyId}]]*/ 'rzp_test_U1tg1HAd3f3eex';
+        const defaultRazorpayKeyId = /*[[${razorpayKeyId}]]*/ 'rzp_live_U1xaW9yEXd9neF';
         const defaultRazorpayOrderId = /*[[${razorpayOrderId}]]*/ '';
         const amountInPaise = /*[[${amountInPaise}]]*/ 200;
         const trackingToken = /*[[${job.trackingToken}]]*/ '';
         const customerFilename = /*[[${job.originalFilename}]]*/ 'Document.pdf';
         const totalAmountStr = /*[[${job.totalAmount}]]*/ '2.00';
+
+        const i18n = {
+            creatingOrder: /*[[#{payment.js_creating_order}]]*/ 'Creating secure Razorpay order...',
+            verifying: /*[[#{payment.js_verifying}]]*/ 'Payment successful! Verifying signature and sending to printer...',
+            cancelled: /*[[#{payment.js_cancelled}]]*/ 'Payment cancelled by user. You can try again whenever ready.',
+            failed: /*[[#{payment.js_failed}]]*/ 'Payment failed:',
+            verifyError: /*[[#{payment.js_verify_error}]]*/ 'Payment verification error. Please contact desk.',
+            orderError: /*[[#{payment.js_order_error}]]*/ 'Order creation error:',
+            retry: /*[[#{payment.js_retry}]]*/ 'Try Again',
+            payBtnLabel: /*[[#{payment.pay_btn_label('₹' + ${job.totalAmount})}]]*/ 'Pay Now'
+        };
 
         function escapeHtml(text) {
             if (!text) return '';
@@ -226,24 +226,18 @@
             const payBtn = document.getElementById('btnPayRazorpay');
             if (payBtn) {
                 payBtn.disabled = false;
-                payBtn.innerHTML = '<i class="bi bi-credit-card-2-front-fill me-2"></i> <span>PhonePe / GPay / कार्डने ₹' + totalAmountStr + ' भरा (Pay Now)</span>';
+                payBtn.innerHTML = '<i class="bi bi-credit-card-2-front-fill me-2"></i> <span>' + i18n.payBtnLabel + '</span>';
             }
         }
 
         /**
-         * STEP 2: FRONTEND - Checkout
-         * 1. On button click: call create-order
-         * 2. Open Razorpay modal with order_id
-         * 3. On success: receive razorpay_payment_id, razorpay_order_id, razorpay_signature
-         * 4. Send all three to verify endpoint
-         * 5. Handle modal dismiss (user cancelled)
-         * 6. Handle payment.failed event
+         * FINAL PRODUCTION RAZORPAY CHECKOUT
          */
         async function openRazorpay() {
             const payBtn = document.getElementById('btnPayRazorpay');
             if (payBtn) {
                 payBtn.disabled = true;
-                payBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> सुरक्षित Razorpay ऑर्डर तयार करत आहे...';
+                payBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> ' + i18n.creatingOrder;
             }
 
             try {
@@ -277,12 +271,12 @@
                     key: activeKeyId,
                     amount: orderData.amount || amountInPaise,
                     currency: orderData.currency || 'INR',
-                    name: 'DigiSeva Print',
-                    description: 'Automated Print Order: ' + customerFilename,
+                    name: 'DIGISEVA PRINT',
+                    description: customerFilename,
                     order_id: activeOrderId,
                     handler: async function (response) {
                         // Step 3: On payment success, receive IDs & signature
-                        showProcessing('पेमेंट यशस्वी! स्वाक्षरी पडताळत आहे आणि प्रिंटरवर पाठवत आहे...');
+                        showProcessing(i18n.verifying);
                         try {
                             const verifyRes = await fetch('/api/verify-payment', {
                                 method: 'POST',
@@ -300,21 +294,20 @@
                             if (verifyRes.ok && (verifyData.status === 'success' || verifyData.success === true)) {
                                 window.location.href = verifyData.redirectUrl || ('/print/confirmation/' + trackingToken);
                             } else {
-                                const failMsg = verifyData.message || verifyData.error || 'पेमेंट स्वाक्षरी पडताळणी अयशस्वी.';
-                                showClientAlert('danger', 'पडताळणी अयशस्वी: ' + failMsg);
+                                const failMsg = verifyData.message || verifyData.error || i18n.verifyError;
+                                showClientAlert('danger', failMsg);
                                 resetPayButton();
                             }
                         } catch (verifyErr) {
                             console.error('Verify error:', verifyErr);
-                            showClientAlert('danger', 'पेमेंट पडताळणी दरम्यान त्रुटी उद्भवली. कृपया ऑपरेटरशी संपर्क साधा.');
+                            showClientAlert('danger', i18n.verifyError);
                             resetPayButton();
                         }
                     },
                     modal: {
                         ondismiss: function () {
-                            // User cancelled modal
                             console.log('[RAZORPAY] Payment cancelled / dismissed by customer');
-                            showClientAlert('warning', 'पेमेंट प्रक्रिया रद्द केली गेली (Payment cancelled by user). तुम्ही पुन्हा प्रयत्न करू शकता.');
+                            showClientAlert('warning', i18n.cancelled);
                             resetPayButton();
                         }
                     },
@@ -330,8 +323,8 @@
                     console.error('[RAZORPAY] Payment failed:', failResponse.error);
                     const reason = (failResponse.error && failResponse.error.description)
                         ? failResponse.error.description
-                        : 'पेमेंट अयशस्वी झाले.';
-                    showClientAlert('danger', 'पेमेंट अयशस्वी: ' + reason);
+                        : '';
+                    showClientAlert('danger', i18n.failed + ' ' + reason);
                     resetPayButton();
                 });
 
@@ -339,29 +332,8 @@
 
             } catch (err) {
                 console.error('[RAZORPAY] Checkout initialization error:', err);
-                showClientAlert('danger', 'त्रुटी: ' + err.message);
+                showClientAlert('danger', i18n.orderError + ' ' + err.message);
                 resetPayButton();
-            }
-        }
-
-        async function triggerAutoSimulation() {
-            const simBtn = document.getElementById('btnSimulatePay');
-            if (simBtn) {
-                simBtn.disabled = true;
-                simBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span> प्रक्रिया सुरू आहे...';
-            }
-            showProcessing('डेमो पेमेंट पडताळत आहे... प्रिंटर सुरू होत आहे.');
-            try {
-                const res = await fetch('/print/payment/auto-simulate/' + trackingToken, { method: 'POST' });
-                const data = await res.json();
-                if (data.success) {
-                    window.location.href = data.redirectUrl;
-                } else {
-                    showClientAlert('danger', 'Simulation error: ' + data.message);
-                    resetPayButton();
-                }
-            } catch (e) {
-                window.location.href = '/print/confirmation/' + trackingToken;
             }
         }
     </script>

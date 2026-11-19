@@ -41,10 +41,10 @@ public class RazorpayServiceImpl implements RazorpayService {
     private final PrinterService printerService;
     private final KioskLogRepository kioskLogRepository;
 
-    @Value("${razorpay.key-id:${RAZORPAY_KEY_ID:rzp_test_U1tg1HAd3f3eex}}")
+    @Value("${razorpay.key-id:${RAZORPAY_KEY_ID:rzp_live_U1xaW9yEXd9neF}}")
     private String keyId;
 
-    @Value("${razorpay.key-secret:${RAZORPAY_KEY_SECRET:yE8GUyjt5kQxlDlyTOuV8735}}")
+    @Value("${razorpay.key-secret:${RAZORPAY_KEY_SECRET:IY0zCuTEe3y69QOqVXZcaZ8q}}")
     private String keySecret;
 
     @Value("${razorpay.currency:${RAZORPAY_CURRENCY:INR}}")
@@ -64,11 +64,11 @@ public class RazorpayServiceImpl implements RazorpayService {
     }
 
     private String getActiveKeyId() {
-        return (keyId != null && !keyId.isBlank()) ? keyId.trim() : "rzp_test_U1tg1HAd3f3eex";
+        return (keyId != null && !keyId.isBlank()) ? keyId.trim() : "rzp_live_U1xaW9yEXd9neF";
     }
 
     private String getActiveKeySecret() {
-        return (keySecret != null && !keySecret.isBlank()) ? keySecret.trim() : "yE8GUyjt5kQxlDlyTOuV8735";
+        return (keySecret != null && !keySecret.isBlank()) ? keySecret.trim() : "IY0zCuTEe3y69QOqVXZcaZ8q";
     }
 
     @Override
