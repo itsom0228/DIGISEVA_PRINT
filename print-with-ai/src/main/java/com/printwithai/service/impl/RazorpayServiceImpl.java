@@ -41,10 +41,10 @@ public class RazorpayServiceImpl implements RazorpayService {
     private final PrinterService printerService;
     private final KioskLogRepository kioskLogRepository;
 
-    @Value("${razorpay.key-id:${RAZORPAY_KEY_ID:}}")
+    @Value("${razorpay.key-id:${RAZORPAY_KEY_ID:rzp_test_U1tg1HAd3f3eex}}")
     private String keyId;
 
-    @Value("${razorpay.key-secret:${RAZORPAY_KEY_SECRET:}}")
+    @Value("${razorpay.key-secret:${RAZORPAY_KEY_SECRET:yE8GUyjt5kQxlDlyTOuV8735}}")
     private String keySecret;
 
     @Value("${razorpay.currency:${RAZORPAY_CURRENCY:INR}}")
@@ -63,14 +63,22 @@ public class RazorpayServiceImpl implements RazorpayService {
         this.kioskLogRepository = kioskLogRepository;
     }
 
+    private String getActiveKeyId() {
+        return (keyId != null && !keyId.isBlank()) ? keyId.trim() : "rzp_test_U1tg1HAd3f3eex";
+    }
+
+    private String getActiveKeySecret() {
+        return (keySecret != null && !keySecret.isBlank()) ? keySecret.trim() : "yE8GUyjt5kQxlDlyTOuV8735";
+    }
+
     @Override
     public String getKeyId() {
-        return keyId;
+        return getActiveKeyId();
     }
 
     @Override
     public String getKeySecret() {
-        return keySecret;
+        return getActiveKeySecret();
     }
 
     @Override
@@ -82,11 +90,10 @@ public class RazorpayServiceImpl implements RazorpayService {
         String targetCurrency = (currency != null && !currency.isBlank()) ? currency : (this.currency != null ? this.currency : "INR");
         String targetReceipt = (receipt != null && !receipt.isBlank()) ? receipt : ("rcpt_" + System.currentTimeMillis());
 
-        if (keyId == null || keyId.isBlank() || keySecret == null || keySecret.isBlank()) {
-            throw new IllegalStateException("Razorpay credentials are not configured in environment (RAZORPAY_KEY_ID / RAZORPAY_KEY_SECRET)");
-        }
+        String effectiveKeyId = getActiveKeyId();
+        String effectiveKeySecret = getActiveKeySecret();
 
-        RazorpayClient client = new RazorpayClient(keyId, keySecret);
+        RazorpayClient client = new RazorpayClient(effectiveKeyId, effectiveKeySecret);
         JSONObject orderRequest = new JSONObject();
         orderRequest.put("amount", amountInPaise);
         orderRequest.put("currency", targetCurrency);
@@ -102,7 +109,7 @@ public class RazorpayServiceImpl implements RazorpayService {
         response.put("order_id", orderId);
         response.put("amount", amountInPaise);
         response.put("currency", targetCurrency);
-        response.put("key_id", keyId);
+        response.put("key_id", effectiveKeyId);
         return response;
     }
 
@@ -113,7 +120,7 @@ public class RazorpayServiceImpl implements RazorpayService {
         }
 
         try {
-            RazorpayClient client = new RazorpayClient(keyId, keySecret);
+            RazorpayClient client = new RazorpayClient(getActiveKeyId(), getActiveKeySecret());
             JSONObject orderRequest = new JSONObject();
 
             // Amount in paise (₹2.00 = 200 paise)
@@ -255,14 +262,11 @@ public class RazorpayServiceImpl implements RazorpayService {
                 orderId.isBlank() || paymentId.isBlank() || signature.isBlank()) {
             return false;
         }
-        if (keySecret == null || keySecret.isBlank()) {
-            log.error("[RAZORPAY] Razorpay keySecret is missing or empty.");
-            return false;
-        }
+        String effectiveSecret = getActiveKeySecret();
         try {
             String data = orderId + "|" + paymentId;
             Mac sha256_HMAC = Mac.getInstance("HmacSHA256");
-            SecretKeySpec secretKey = new SecretKeySpec(keySecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
+            SecretKeySpec secretKey = new SecretKeySpec(effectiveSecret.getBytes(StandardCharsets.UTF_8), "HmacSHA256");
             sha256_HMAC.init(secretKey);
             byte[] hash = sha256_HMAC.doFinal(data.getBytes(StandardCharsets.UTF_8));
 
